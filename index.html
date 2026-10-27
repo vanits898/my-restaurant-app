@@ -1475,6 +1475,22 @@
             renderTableOverview();
             renderReports();
         }
+        // ซ่อนเมนูสลับสิทธิ์เมื่อเป็นโหมดลูกค้า
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'customer') {
+      const roleSelector = document.getElementById('roleSelector') || 
+                           document.querySelector('select') || 
+                           document.getElementById('roleSelectorContainer');
+      if (roleSelector) {
+        const parentContainer = roleSelector.closest('.mb-4') || roleSelector.parentElement;
+        if (parentContainer) {
+          parentContainer.style.display = 'none';
+        } else {
+          roleSelector.style.display = 'none';
+        }
+      }
+    }
     </script>
 </body>
 </html>
+
