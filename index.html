@@ -566,33 +566,51 @@
         </div>
     </div>
 
-    <!-- AUDIO SOUND SYNTHESIZER -->
+    <!-- AUDIO SOUND SYNTHESIZER (HIGH VOLUME ENHANCED) -->
     <script>
         const playSound = (type = 'newOrder') => {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
+                
                 if (type === 'newOrder') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.4);
+                    // 🔔 เสียงแจ้งเตือนออเดอร์ใหม่: เสียง "ปิ๊ป-ปิ๊ป" ดัง ชัดเจน (High Volume Double Beep)
+                    const osc1 = ctx.createOscillator();
+                    const gain1 = ctx.createGain();
+                    osc1.type = 'square'; // คลื่นรูปสี่เหลี่ยม เสียงจะแน่นและดังชัดขึ้น
+                    osc1.frequency.setValueAtTime(783.99, ctx.currentTime); // โน้ต G5
+                    gain1.gain.setValueAtTime(0.8, ctx.currentTime); // เพิ่มระดับความดังเป็น 0.8
+                    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                    osc1.connect(gain1);
+                    gain1.connect(ctx.destination);
+                    osc1.start(ctx.currentTime);
+                    osc1.stop(ctx.currentTime + 0.2);
+
+                    const osc2 = ctx.createOscillator();
+                    const gain2 = ctx.createGain();
+                    osc2.type = 'square';
+                    osc2.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.22); // โน้ต C6
+                    gain2.gain.setValueAtTime(1.0, ctx.currentTime + 0.22); // ปรับความดังสูงสุด 1.0
+                    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.55);
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.start(ctx.currentTime + 0.22);
+                    osc2.stop(ctx.currentTime + 0.55);
+
                 } else if (type === 'paid') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
-                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
-                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.5);
+                    // 💰 เสียงชำระเงินสำเร็จ: ดัง กังวาน ชัดเจน
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime + (i * 0.12));
+                        gain.gain.setValueAtTime(0.8, ctx.currentTime + (i * 0.12));
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (i * 0.12) + 0.3);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + (i * 0.12));
+                        osc.stop(ctx.currentTime + (i * 0.12) + 0.3);
+                    });
                 }
             } catch(e) { console.log('Audio error:', e); }
         }
@@ -1001,7 +1019,6 @@
                 document.getElementById('pos-phone').value = '';
                 playSound('newOrder');
 
-                // 🔔 ยิงข้อความแจ้งเตือนเข้ากลุ่ม Telegram พนักงาน
                 const itemsListText = newOrder.items.map(i => `• ${i.name} (x${i.qty}) - ฿${i.price * i.qty}`).join('\n');
                 let staffMessage = `🚨 <b>ออเดอร์ใหม่เข้ามาแล้ว! [#${newOrder.id}]</b>\n`;
                 staffMessage += `📍 <b>ประเภท/โต๊ะ:</b> ${newOrder.table}\n`;
@@ -1013,7 +1030,6 @@
 
                 sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage);
 
-                // 📩 แจ้งสถานะลงกลุ่มลูกค้า
                 let customerGroupMsg = `🎉 <b>ทางร้านรับออเดอร์แล้ว [#${newOrder.id}]</b>\nประเภท: ${newOrder.table}\nรายการ: ${newOrder.items.length} รายการ (ยอดรวม ฿${newOrder.total})\nกำลังต่อคิวเข้าห้องครัวครับ!`;
                 sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, customerGroupMsg);
 
@@ -1218,7 +1234,6 @@
             }).join('');
         }
 
-        // อัปเดตสถานะออเดอร์ พร้อมยิงแจ้งเตือนสถานะลูกค้าเข้ากลุ่ม -5386238526
         function updateOrderStatus(orderId, newStatus) {
             const order = orders.find(o => o.id === orderId);
             if (!order) return;
@@ -1237,10 +1252,7 @@
                 }
 
                 if (statusMsg) {
-                    // 1. แจ้งเตือนสถานะลงกลุ่มลูกค้า -5386238526
                     sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, statusMsg);
-
-                    // 2. ถ้าเป็นลูกค้าทักส่วนตัวผ่าน Chat ID ยิงเข้าแชทส่วนตัวด้วย
                     if (order.customerChatId) {
                         sendTelegramNotification(order.customerChatId, statusMsg);
                     }
@@ -1741,7 +1753,6 @@
                 playSound('newOrder');
                 alert(`✅ ส่งออเดอร์ ${newOrder.id} เรียบร้อยแล้ว!`);
 
-                // 🔔 ยิงข้อความแจ้งออเดอร์ใหม่เข้ากลุ่ม Telegram พนักงาน
                 const itemsListText = newOrder.items.map(i => `• ${i.name} (x${i.qty}) - ฿${i.price * i.qty}`).join('\n');
                 let staffMessage = `🚨 <b>ออเดอร์ใหม่เข้ามาแล้ว! [#${newOrder.id}]</b>\n`;
                 staffMessage += `📍 <b>ประเภท/โต๊ะ:</b> ${newOrder.table}\n`;
@@ -1757,7 +1768,6 @@
                     sendTelegramLocation(TELEGRAM_STAFF_GROUP_ID, userLocation.lat, userLocation.lng);
                 }
 
-                // 📩 แจ้งข้อความยืนยันรับออเดอร์ลงกลุ่มลูกค้า -5386238526
                 let customerGroupMsg = `🎉 <b>รับออเดอร์ใหม่เรียบร้อยแล้ว [#${newOrder.id}]</b>\n`;
                 customerGroupMsg += `📍 ประเภท: ${newOrder.table}\n`;
                 if (newOrder.phone !== '-') customerGroupMsg += `📞 เบอร์ติดต่อ: ${newOrder.phone}\n`;
