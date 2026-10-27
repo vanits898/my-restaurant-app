@@ -34,11 +34,13 @@
         const database = firebase.database();
         const ordersRef = database.ref('orders');
         const menuRef = database.ref('menu');
+
         // ==========================================
-        // ⚙️ TELEGRAM BOT NOTIFICATION API SETTINGS
+        // ⚙️ ตั้งค่า TELEGRAM BOT NOTIFICATION API
         // ==========================================
-        const TELEGRAM_BOT_TOKEN = "8639723391:AAHRU6IP1691fbgitzc02BA36dirR1UXVAY";
-        const TELEGRAM_STAFF_GROUP_ID = "-5477176074";
+        const TELEGRAM_BOT_TOKEN = "8639723391:AAHRU6IP1691fbgitzc02BA36dirR1UXVAY";[cite: 11]
+        const TELEGRAM_STAFF_GROUP_ID = "-5477176074";[cite: 11]
+        const TELEGRAM_CUSTOMER_STATUS_GROUP_ID = "-5386238526"; // กลุ่มสำหรับแจ้งสถานะลูกค้า
 
         tailwind.config = {
             theme: {
@@ -71,11 +73,10 @@
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <!-- GLOBAL TOP CONTROL BAR (Role Switching & Mode Control) -->
+    <!-- GLOBAL TOP CONTROL BAR -->
     <header id="global-header" class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap justify-between items-center gap-3">
             
-            <!-- App Title & Active Mode Badge -->
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-utensils text-tg-blue text-2xl"></i>
                 <div>
@@ -91,7 +92,6 @@
                 </div>
             </div>
 
-            <!-- Role Selector Droplist & Controls -->
             <div id="role-selector-container" class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
                 <label class="text-xs text-slate-300 ml-1 hidden sm:inline"><i class="fa-solid fa-user-gear"></i> สลับสิทธิ์อุปกรณ์:</label>
                 <select id="role-selector" onchange="changeRoleMode(this.value)" class="bg-slate-900 border border-slate-600 rounded-lg text-xs font-semibold px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-tg-blue">
@@ -103,7 +103,6 @@
             </div>
         </div>
 
-        <!-- CASHIER MAIN NAVIGATION BAR -->
         <nav id="cashier-navbar" class="bg-slate-800 border-t border-slate-700/80 px-4 py-1.5 overflow-x-auto">
             <div class="max-w-7xl mx-auto flex space-x-1.5 text-xs">
                 <button onclick="switchTab('tab-pos')" id="btn-tab-pos" class="nav-btn px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700 whitespace-nowrap">
@@ -157,7 +156,7 @@
                         <div class="grid grid-cols-2 gap-2 my-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">เลือกโต๊ะ / ประเภท</label>
-                                <select id="pos-table-select" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-slate-50 focus:outline-none">
+                                <select id="pos-table-select" onchange="togglePosDeliveryPhone(this.value)" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-slate-50 focus:outline-none">
                                     <option value="T-01">โต๊ะ 1</option>
                                     <option value="T-02">โต๊ะ 2</option>
                                     <option value="T-03">โต๊ะ 3</option>
@@ -176,7 +175,14 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="flex-1 overflow-y-auto max-h-[260px] space-y-2 my-2 border-y border-slate-100 py-2 pr-1" id="pos-cart-items">
+
+                        <!-- ช่องกรอกเบอร์โทรเดลิเวอรี่สำหรับ POS -->
+                        <div id="pos-phone-box" class="mb-2 hidden">
+                            <label class="block text-[11px] font-semibold text-blue-600 mb-1"><i class="fa-solid fa-phone"></i> เบอร์โทรศัพท์จัดส่ง</label>
+                            <input type="tel" id="pos-phone" placeholder="เช่น 0812345678" class="w-full border border-blue-300 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-blue-50/50">
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto max-h-[220px] space-y-2 my-2 border-y border-slate-100 py-2 pr-1" id="pos-cart-items">
                             <p class="text-xs text-slate-400 text-center py-10">คลิกเลือกเมนูจากฝั่งซ้ายเพื่อสั่งซื้อ</p>
                         </div>
                         <div class="my-2">
@@ -220,6 +226,7 @@
                                 <th class="p-3">เลขที่ออเดอร์</th>
                                 <th class="p-3">เวลา</th>
                                 <th class="p-3">โต๊ะ/ประเภท</th>
+                                <th class="p-3">เบอร์โทร</th>
                                 <th class="p-3">รายการอาหาร</th>
                                 <th class="p-3">ยอดรวม</th>
                                 <th class="p-3">สถานะขั้นตอน</th>
@@ -389,14 +396,18 @@
                     </div>
 
                     <!-- ส่วนปักหมุดตำแหน่งเดลิเวอรี่สำหรับลูกค้า -->
-                    <div id="cust-delivery-location-box" class="mt-3 bg-slate-800/80 p-2.5 rounded-xl border border-blue-500/30 hidden">
-                        <div class="flex items-center justify-between">
+                    <div id="cust-delivery-location-box" class="mt-3 bg-slate-800/80 p-2.5 rounded-xl border border-blue-500/30 hidden space-y-2">
+                        <div>
+                            <label class="block text-[10px] text-blue-300 font-semibold mb-1"><i class="fa-solid fa-phone"></i> เบอร์โทรศัพท์สำหรับจัดส่ง *</label>
+                            <input type="tel" id="cust-phone" placeholder="เช่น 0812345678" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-tg-blue">
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
                             <span class="text-xs text-slate-200 font-medium"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> ตำแหน่งจัดส่ง:</span>
                             <button onclick="getUserGPSLocation()" type="button" class="bg-blue-600 hover:bg-blue-500 text-white text-[11px] px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 shadow">
                                 <i class="fa-solid fa-crosshairs"></i> ปักหมุด GPS ปัจจุบัน
                             </button>
                         </div>
-                        <p id="location-coords-display" class="text-[10px] text-tg-hint mt-1 truncate">ยังไม่ได้เลือกตำแหน่งจัดส่ง</p>
+                        <p id="location-coords-display" class="text-[10px] text-tg-hint truncate">ยังไม่ได้เลือกตำแหน่งจัดส่ง</p>
                     </div>
                 </div>
 
@@ -591,8 +602,8 @@
     <script>
         let currentRole = 'cashier';
         let currentTab = 'tab-pos';
-        let userLocation = null; // เก็บค่าพิกัด GPS สำหรับออเดอร์เดลิเวอรี่
-        let customerTelegramChatId = null; // ID แชทของลูกค้าเพื่อส่งแจ้งเตือน
+        let userLocation = null; 
+        let customerTelegramChatId = null; 
 
         function renderMedia(imgSrc, altName = '') {
             if (!imgSrc) return '<span class="text-xl">🍽️</span>';
@@ -628,7 +639,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             const tableParam = urlParams.get('table');
-            const telegramUserParam = urlParams.get('chat_id'); // ลิงก์ที่ลูกค้ากดเข้ามาผ่าน Telegram Mini App
+            const telegramUserParam = urlParams.get('chat_id'); 
 
             if (telegramUserParam) {
                 customerTelegramChatId = telegramUserParam;
@@ -638,6 +649,7 @@
                 document.getElementById('cust-table-select').value = tableParam;
                 document.getElementById('pos-table-select').value = tableParam;
                 toggleDeliveryLocationUI(tableParam);
+                togglePosDeliveryPhone(tableParam);
             }
 
             if (modeParam && ['cashier', 'customer', 'kds', 'waiter'].includes(modeParam)) {
@@ -683,12 +695,11 @@
         };
 
         // ====================================================
-        // 📲 TELEGRAM BOT NOTIFICATION FUNCTIONS (API HELPER)
+        // 📲 TELEGRAM BOT NOTIFICATION API HELPER
         // ====================================================
 
-        // 1. ส่งข้อความแจ้งเตือนผ่าน Telegram Bot API
         function sendTelegramNotification(targetChatId, messageText) {
-            if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN.includes("ใส่_BOT_TOKEN")) return;
+            if (!TELEGRAM_BOT_TOKEN) return;
 
             fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
@@ -701,9 +712,8 @@
             }).catch(err => console.error("Telegram Notification Error:", err));
         }
 
-        // 2. ส่งปักหมุดตำแหน่งพิกัด GPS (Telegram SendLocation)
         function sendTelegramLocation(targetChatId, latitude, longitude) {
-            if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN.includes("ใส่_BOT_TOKEN")) return;
+            if (!TELEGRAM_BOT_TOKEN) return;
 
             fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendLocation`, {
                 method: 'POST',
@@ -716,7 +726,6 @@
             }).catch(err => console.error("Telegram Location Error:", err));
         }
 
-        // 3. ฟังก์ชันดึงพิกัด GPS บนอุปกรณ์ของลูกค้า
         function getUserGPSLocation() {
             const display = document.getElementById('location-coords-display');
             if (navigator.geolocation) {
@@ -741,6 +750,15 @@
 
         function toggleDeliveryLocationUI(tableVal) {
             const box = document.getElementById('cust-delivery-location-box');
+            if (tableVal === 'Delivery') {
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function togglePosDeliveryPhone(tableVal) {
+            const box = document.getElementById('pos-phone-box');
             if (tableVal === 'Delivery') {
                 box.classList.remove('hidden');
             } else {
@@ -951,8 +969,14 @@
 
             const table = document.getElementById('pos-table-select').value;
             const channel = document.getElementById('pos-channel-select').value;
+            const phone = document.getElementById('pos-phone').value;
             const note = document.getElementById('pos-note').value;
             const totalPrice = posCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            if (table === 'Delivery' && !phone) {
+                alert('โปรดระบุเบอร์โทรศัพท์สำหรับจัดส่งเดลิเวอรี่');
+                return;
+            }
 
             const orderId = 'ORD-' + Math.floor(100 + Math.random() * 900);
             const newOrder = {
@@ -961,6 +985,7 @@
                 timestamp: Date.now(),
                 table: table,
                 channel: channel,
+                phone: phone || '-',
                 items: [...posCart],
                 total: totalPrice,
                 note: note ? `[${channel}] ${note}` : `[สั่งโดย ${channel}]`,
@@ -973,10 +998,27 @@
                 posCart = [];
                 renderPosCart();
                 document.getElementById('pos-note').value = '';
+                document.getElementById('pos-phone').value = '';
                 playSound('newOrder');
 
+                // 🔔 ยิงข้อความแจ้งเตือนเข้ากลุ่ม Telegram พนักงาน
+                const itemsListText = newOrder.items.map(i => `• ${i.name} (x${i.qty}) - ฿${i.price * i.qty}`).join('\n');
+                let staffMessage = `🚨 <b>ออเดอร์ใหม่เข้ามาแล้ว! [#${newOrder.id}]</b>\n`;
+                staffMessage += `📍 <b>ประเภท/โต๊ะ:</b> ${newOrder.table}\n`;
+                if (newOrder.phone !== '-') staffMessage += `📞 <b>เบอร์โทร:</b> ${newOrder.phone}\n`;
+                staffMessage += `⏰ <b>เวลาสั่ง:</b> ${newOrder.time}\n`;
+                staffMessage += `📝 <b>รายการอาหาร:</b>\n${itemsListText}\n`;
+                staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
+                if (newOrder.note) staffMessage += `💬 <b>หมายเหตุ:</b> ${newOrder.note}\n`;
+
+                sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage);
+
+                // 📩 แจ้งสถานะลงกลุ่มลูกค้า
+                let customerGroupMsg = `🎉 <b>ทางร้านรับออเดอร์แล้ว [#${newOrder.id}]</b>\nประเภท: ${newOrder.table}\nรายการ: ${newOrder.items.length} รายการ (ยอดรวม ฿${newOrder.total})\nกำลังต่อคิวเข้าห้องครัวครับ!`;
+                sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, customerGroupMsg);
+
                 if (autoPay) {
-                    alert(`✅ บันทึกออเดอร์ ${newOrder.id} (${table}) และรับชำระเงินเรียบร้อยแล้ว!`);
+                    alert(`✅ บันทึกออเดอร์ ${newOrder.id} (${table}) เรียบร้อยแล้ว!`);
                 } else {
                     alert(`✅ ส่งออเดอร์ ${newOrder.id} (${table}) เข้าห้องครัวเรียบร้อยแล้ว!`);
                 }
@@ -1015,7 +1057,7 @@
             const activeList = orders.filter(o => !o.paid);
 
             if (activeList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่มีออเดอร์ที่ค้างชำระในขณะนี้</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">ไม่มีออเดอร์ที่ค้างชำระในขณะนี้</td></tr>`;
                 return;
             }
 
@@ -1024,6 +1066,7 @@
                     <td class="p-3 font-mono font-bold text-slate-800">${o.id}</td>
                     <td class="p-3 text-slate-500">${o.time}</td>
                     <td class="p-3 font-bold text-slate-800">${o.table}</td>
+                    <td class="p-3 text-blue-600 font-medium">${o.phone || '-'}</td>
                     <td class="p-3 truncate max-w-xs">${o.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</td>
                     <td class="p-3 font-bold text-blue-600">฿${o.total}</td>
                     <td class="p-3">
@@ -1049,6 +1092,7 @@
 
         function selectTableForPos(table) {
             document.getElementById('pos-table-select').value = table;
+            togglePosDeliveryPhone(table);
             switchTab('tab-pos');
         }
 
@@ -1111,6 +1155,12 @@
                             </div>
 
                             <div class="p-3 space-y-2 text-xs">
+                                ${order.phone && order.phone !== '-' ? `
+                                    <div class="bg-blue-50 border border-blue-200 text-blue-900 p-2 rounded-lg font-bold">
+                                        📞 เบอร์โทร: <a href="tel:${order.phone}" class="underline text-blue-700">${order.phone}</a>
+                                    </div>
+                                ` : ''}
+
                                 ${order.items.map(item => `
                                     <div class="border-b border-slate-100 pb-1.5 last:border-0">
                                         <div class="flex justify-between font-semibold text-slate-800">
@@ -1168,7 +1218,7 @@
             }).join('');
         }
 
-        // อัปเดตสถานะออเดอร์ พร้อมยิงข้อความแจ้งลูกค้า/พนักงานผ่าน Telegram Bot API
+        // อัปเดตสถานะออเดอร์ พร้อมยิงแจ้งเตือนสถานะลูกค้าเข้ากลุ่ม -5386238526
         function updateOrderStatus(orderId, newStatus) {
             const order = orders.find(o => o.id === orderId);
             if (!order) return;
@@ -1176,17 +1226,24 @@
             ordersRef.child(orderId).update({ status: newStatus }).then(() => {
                 playSound('newOrder');
 
-                // 1. แจ้งเตือนอัปเดตสถานะกลับไปยังลูกค้า
-                if (order.customerChatId) {
-                    let statusMsg = "";
-                    if (newStatus === 'cooking') {
-                        statusMsg = `🍳 <b>อัปเดตสถานะออเดอร์ #${order.id}</b>\nห้องครัวกำลังเริ่มปรุงอาหารของคุณแล้วครับ!`;
-                    } else if (newStatus === 'delivering') {
-                        statusMsg = `🛵 <b>อัปเดตสถานะออเดอร์ #${order.id}</b>\nอาหารปรุงเสร็จแล้ว ไรเดอร์กำลังนำอาหารไปส่งครับ!`;
-                    } else if (newStatus === 'completed') {
-                        statusMsg = `✅ <b>อัปเดตสถานะออเดอร์ #${order.id}</b>\nจัดส่ง/เสิร์ฟ อาหารเรียบร้อยแล้ว ขอบคุณที่ใช้บริการครับ! 🙏`;
+                let statusMsg = "";
+                if (newStatus === 'cooking') {
+                    statusMsg = `🍳 <b>อัปเดตสถานะออเดอร์ #${order.id} (${order.table})</b>\nห้องครัวกำลังเริ่มปรุงอาหารของคุณแล้วครับ!`;
+                } else if (newStatus === 'delivering') {
+                    statusMsg = `🛵 <b>อัปเดตสถานะออเดอร์ #${order.id} (${order.table})</b>\nอาหารปรุงเสร็จแล้ว ไรเดอร์กำลังนำอาหารไปจัดส่งครับ!`;
+                    if (order.phone && order.phone !== '-') statusMsg += `\n📞 เบอร์ติดต่อลูกค้า: ${order.phone}`;
+                } else if (newStatus === 'completed') {
+                    statusMsg = `✅ <b>อัปเดตสถานะออเดอร์ #${order.id} (${order.table})</b>\nจัดส่ง/เสิร์ฟ อาหารเรียบร้อยแล้ว ขอบคุณที่ใช้บริการครับ! 🙏`;
+                }
+
+                if (statusMsg) {
+                    // 1. แจ้งเตือนสถานะลงกลุ่มลูกค้า -5386238526
+                    sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, statusMsg);
+
+                    // 2. ถ้าเป็นลูกค้าทักส่วนตัวผ่าน Chat ID ยิงเข้าแชทส่วนตัวด้วย
+                    if (order.customerChatId) {
+                        sendTelegramNotification(order.customerChatId, statusMsg);
                     }
-                    if (statusMsg) sendTelegramNotification(order.customerChatId, statusMsg);
                 }
             });
         }
@@ -1643,13 +1700,18 @@
             if (customerCart.length === 0) toggleCartModal(false);
         }
 
-        // ฟังก์ชันสั่งซื้อฝั่งลูกค้า พร้อมยิงพิกัด GPS & ข้อความเข้า Telegram พนักงาน
         function submitCustomerOrder() {
             if (customerCart.length === 0) return;
 
             const table = document.getElementById('cust-table-select').value;
+            const phone = document.getElementById('cust-phone').value;
             const note = document.getElementById('cart-note').value;
             const totalPrice = customerCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            if (table === 'Delivery' && !phone) {
+                alert('โปรดระบุเบอร์โทรศัพท์สำหรับจัดส่งเดลิเวอรี่');
+                return;
+            }
 
             const orderId = 'ORD-' + Math.floor(100 + Math.random() * 900);
             const newOrder = {
@@ -1658,13 +1720,14 @@
                 timestamp: Date.now(),
                 table: table,
                 channel: 'Telegram Mini App',
+                phone: phone || '-',
                 items: [...customerCart],
                 total: totalPrice,
                 note: note,
                 status: 'pending',
                 paid: false,
                 paymentMethod: '-',
-                location: userLocation, // ค่า GPS { lat, lng }
+                location: userLocation,
                 customerChatId: customerTelegramChatId
             };
 
@@ -1673,14 +1736,16 @@
                 updateCustomerCartUI();
                 toggleCartModal(false);
                 document.getElementById('cart-note').value = '';
+                document.getElementById('cust-phone').value = '';
 
                 playSound('newOrder');
                 alert(`✅ ส่งออเดอร์ ${newOrder.id} เรียบร้อยแล้ว!`);
 
-                // 🔔 ยิงแจ้งเตือนเข้ากลุ่ม Telegram ของพนักงาน
+                // 🔔 ยิงข้อความแจ้งออเดอร์ใหม่เข้ากลุ่ม Telegram พนักงาน
                 const itemsListText = newOrder.items.map(i => `• ${i.name} (x${i.qty}) - ฿${i.price * i.qty}`).join('\n');
                 let staffMessage = `🚨 <b>ออเดอร์ใหม่เข้ามาแล้ว! [#${newOrder.id}]</b>\n`;
                 staffMessage += `📍 <b>ประเภท/โต๊ะ:</b> ${newOrder.table}\n`;
+                if (newOrder.phone !== '-') staffMessage += `📞 <b>เบอร์โทร:</b> ${newOrder.phone}\n`;
                 staffMessage += `⏰ <b>เวลาสั่ง:</b> ${newOrder.time}\n`;
                 staffMessage += `📝 <b>รายการอาหาร:</b>\n${itemsListText}\n`;
                 staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
@@ -1688,15 +1753,18 @@
 
                 sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage);
 
-                // 📍 ถ้าเป็นออเดอร์ Delivery และมีพิกัด GPS ให้ปักหมุดส่งเข้ากลุ่ม Telegram ไรเดอร์นำทางทันที
                 if (newOrder.table === 'Delivery' && userLocation) {
                     sendTelegramLocation(TELEGRAM_STAFF_GROUP_ID, userLocation.lat, userLocation.lng);
                 }
 
-                // 📩 ยิงข้อความยืนยันรับออเดอร์กลับไปหาลูกค้าใน Telegram
-                if (customerTelegramChatId) {
-                    sendTelegramNotification(customerTelegramChatId, `🎉 <b>รับออเดอร์ #${newOrder.id} เรียบร้อยแล้ว!</b>\nทางร้านกำลังเตรียมปรุงอาหารให้คุณครับ สามารถติดตามสถานะได้ใน Mini App`);
-                }
+                // 📩 แจ้งข้อความยืนยันรับออเดอร์ลงกลุ่มลูกค้า -5386238526
+                let customerGroupMsg = `🎉 <b>รับออเดอร์ใหม่เรียบร้อยแล้ว [#${newOrder.id}]</b>\n`;
+                customerGroupMsg += `📍 ประเภท: ${newOrder.table}\n`;
+                if (newOrder.phone !== '-') customerGroupMsg += `📞 เบอร์ติดต่อ: ${newOrder.phone}\n`;
+                customerGroupMsg += `💰 ยอดรวม: ฿${newOrder.total}\n`;
+                customerGroupMsg += `กำลังส่งรายการอาหารเข้าห้องครัวครับ! 🍳`;
+
+                sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, customerGroupMsg);
             });
         }
     </script>
