@@ -573,7 +573,6 @@
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 
                 if (type === 'newOrder') {
-                    // 🔔 เสียงแจ้งเตือนออเดอร์ใหม่: เสียง "ปิ๊ป-ปิ๊ป" ดัง ชัดเจน (High Volume Double Beep)
                     const osc1 = ctx.createOscillator();
                     const gain1 = ctx.createGain();
                     osc1.type = 'square';
@@ -597,7 +596,6 @@
                     osc2.stop(ctx.currentTime + 0.55);
 
                 } else if (type === 'paid') {
-                    // 💰 เสียงชำระเงินสำเร็จ: ดัง กังวาน ชัดเจน
                     const notes = [523.25, 659.25, 783.99, 1046.50];
                     notes.forEach((freq, i) => {
                         const osc = ctx.createOscillator();
@@ -716,17 +714,23 @@
         // 📲 TELEGRAM BOT NOTIFICATION API HELPER
         // ====================================================
 
-        function sendTelegramNotification(targetChatId, messageText) {
+        function sendTelegramNotification(targetChatId, messageText, replyMarkup = null) {
             if (!TELEGRAM_BOT_TOKEN) return;
+
+            const payload = {
+                chat_id: targetChatId,
+                text: messageText,
+                parse_mode: 'HTML'
+            };
+
+            if (replyMarkup) {
+                payload.reply_markup = replyMarkup;
+            }
 
             fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: targetChatId,
-                    text: messageText,
-                    parse_mode: 'HTML'
-                })
+                body: JSON.stringify(payload)
             }).catch(err => console.error("Telegram Notification Error:", err));
         }
 
@@ -1028,7 +1032,15 @@
                 staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
                 if (newOrder.note) staffMessage += `💬 <b>หมายเหตุ:</b> ${newOrder.note}\n`;
 
-                sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage);
+                // 📌 เพิ่มปุ่มกด Web App ในกลุ่ม Telegram ไรเดอร์
+                const currentAppUrl = window.location.origin + window.location.pathname;
+                const riderKeyboard = {
+                    inline_keyboard: [
+                        [{ text: "🛵 จัดส่งถึงลูกค้าเรียบร้อย (เปิดแอป)", url: `${currentAppUrl}?mode=kds` }]
+                    ]
+                };
+
+                sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage, riderKeyboard);
 
                 let customerGroupMsg = `🎉 <b>ทางร้านรับออเดอร์แล้ว [#${newOrder.id}]</b>\nประเภท: ${newOrder.table}\nรายการ: ${newOrder.items.length} รายการ (ยอดรวม ฿${newOrder.total})\nกำลังต่อคิวเข้าห้องครัวครับ!`;
                 sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, customerGroupMsg);
@@ -1766,7 +1778,15 @@
                 staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
                 if (newOrder.note) staffMessage += `💬 <b>หมายเหตุ:</b> ${newOrder.note}\n`;
 
-                sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage);
+                // 📌 เพิ่มปุ่มกด Web App ในกลุ่ม Telegram ไรเดอร์
+                const currentAppUrl = window.location.origin + window.location.pathname;
+                const riderKeyboard = {
+                    inline_keyboard: [
+                        [{ text: "🛵 จัดส่งถึงลูกค้าเรียบร้อย (เปิดแอป)", url: `${currentAppUrl}?mode=kds` }]
+                    ]
+                };
+
+                sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage, riderKeyboard);
 
                 if (newOrder.table === 'Delivery' && userLocation) {
                     sendTelegramLocation(TELEGRAM_STAFF_GROUP_ID, userLocation.lat, userLocation.lng);
