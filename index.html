@@ -34,6 +34,11 @@
         const database = firebase.database();
         const ordersRef = database.ref('orders');
         const menuRef = database.ref('menu');
+        // ==========================================
+        // ⚙️ TELEGRAM BOT NOTIFICATION API SETTINGS
+        // ==========================================
+        const TELEGRAM_BOT_TOKEN = "8639723391:AAHRU6IP1691fbgitzc02BA36dirR1UXVAY";
+        const TELEGRAM_STAFF_GROUP_ID = "-5477176074";
 
         tailwind.config = {
             theme: {
@@ -151,7 +156,7 @@
                         </div>
                         <div class="grid grid-cols-2 gap-2 my-3">
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">เลือกโต๊ะ</label>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">เลือกโต๊ะ / ประเภท</label>
                                 <select id="pos-table-select" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-slate-50 focus:outline-none">
                                     <option value="T-01">โต๊ะ 1</option>
                                     <option value="T-02">โต๊ะ 2</option>
@@ -159,6 +164,7 @@
                                     <option value="T-04">โต๊ะ 4</option>
                                     <option value="T-05">โต๊ะ 5</option>
                                     <option value="Takeaway">กลับบ้าน / หน้าร้าน</option>
+                                    <option value="Delivery">🛵 เดลิเวอรี่ (Delivery)</option>
                                 </select>
                             </div>
                             <div>
@@ -213,10 +219,10 @@
                             <tr>
                                 <th class="p-3">เลขที่ออเดอร์</th>
                                 <th class="p-3">เวลา</th>
-                                <th class="p-3">โต๊ะ</th>
+                                <th class="p-3">โต๊ะ/ประเภท</th>
                                 <th class="p-3">รายการอาหาร</th>
                                 <th class="p-3">ยอดรวม</th>
-                                <th class="p-3">สถานะการปรุง</th>
+                                <th class="p-3">สถานะขั้นตอน</th>
                                 <th class="p-3">การชำระเงิน</th>
                                 <th class="p-3 text-center">จัดการ</th>
                             </tr>
@@ -240,6 +246,7 @@
                 <div class="flex items-center gap-3 text-xs">
                     <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-pending-count">รอปรุง: 0</span>
                     <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-cooking-count">กำลังปรุง: 0</span>
+                    <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-delivering-count">กำลังส่ง: 0</span>
                     <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-done-count">เสร็จแล้ว: 0</span>
                 </div>
             </div>
@@ -326,7 +333,7 @@
                             <tr>
                                 <th class="p-3">เลขที่</th>
                                 <th class="p-3">เวลา</th>
-                                <th class="p-3">โต๊ะ</th>
+                                <th class="p-3">โต๊ะ/ประเภท</th>
                                 <th class="p-3">รายการอาหาร</th>
                                 <th class="p-3">ราคารวม</th>
                                 <th class="p-3">สถานะชำระเงิน</th>
@@ -364,20 +371,32 @@
                 <div class="p-4 bg-gradient-to-r from-blue-900 to-tg-card border-b border-slate-700">
                     <div class="flex justify-between items-center">
                         <div>
-                            <span class="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] px-2 py-0.5 rounded-full">สั่งอาหารเข้าโต๊ะ</span>
+                            <span class="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] px-2 py-0.5 rounded-full">สั่งอาหาร</span>
                             <h3 class="text-base font-bold mt-1">ยินดีต้อนรับครับ</h3>
                         </div>
                         <div class="flex flex-col items-end">
-                            <label class="text-[10px] text-tg-hint">เลือกหมายเลขโต๊ะ</label>
-                            <select id="cust-table-select" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs font-bold text-amber-400 focus:outline-none">
+                            <label class="text-[10px] text-tg-hint">ประเภทการสั่งซื้อ</label>
+                            <select id="cust-table-select" onchange="toggleDeliveryLocationUI(this.value)" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs font-bold text-amber-400 focus:outline-none">
                                 <option value="T-01">โต๊ะ 1</option>
                                 <option value="T-02">โต๊ะ 2</option>
                                 <option value="T-03">โต๊ะ 3</option>
                                 <option value="T-04">โต๊ะ 4</option>
                                 <option value="T-05">โต๊ะ 5</option>
                                 <option value="Takeaway">กลับบ้าน (Takeaway)</option>
+                                <option value="Delivery">🛵 เดลิเวอรี่ (Delivery)</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- ส่วนปักหมุดตำแหน่งเดลิเวอรี่สำหรับลูกค้า -->
+                    <div id="cust-delivery-location-box" class="mt-3 bg-slate-800/80 p-2.5 rounded-xl border border-blue-500/30 hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-200 font-medium"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> ตำแหน่งจัดส่ง:</span>
+                            <button onclick="getUserGPSLocation()" type="button" class="bg-blue-600 hover:bg-blue-500 text-white text-[11px] px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 shadow">
+                                <i class="fa-solid fa-crosshairs"></i> ปักหมุด GPS ปัจจุบัน
+                            </button>
+                        </div>
+                        <p id="location-coords-display" class="text-[10px] text-tg-hint mt-1 truncate">ยังไม่ได้เลือกตำแหน่งจัดส่ง</p>
                     </div>
                 </div>
 
@@ -404,9 +423,11 @@
                             </button>
                         </div>
                         <div id="cart-items-list" class="flex-1 overflow-y-auto space-y-2 mb-3 max-h-[35vh] pr-1"></div>
-                        <div class="mb-3">
-                            <label class="block text-xs text-tg-hint mb-1">หมายเหตุเพิ่มเติมถึงห้องครัว</label>
-                            <input type="text" id="cart-note" placeholder="เช่น ไม่ใส่ผักชี, ช้อนพลาสติก..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-tg-blue">
+                        <div class="mb-3 space-y-2">
+                            <div>
+                                <label class="block text-xs text-tg-hint mb-1">หมายเหตุเพิ่มเติมถึงห้องครัว</label>
+                                <input type="text" id="cart-note" placeholder="เช่น ไม่ใส่ผักชี, ช้อนพลาสติก..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-tg-blue">
+                            </div>
                         </div>
                         <div class="space-y-1 border-t border-slate-700 pt-2 mb-3 text-xs">
                             <div class="flex justify-between font-bold text-sm text-white">
@@ -448,7 +469,7 @@
 
     </main>
 
-    <!-- EDIT / ADD MENU MODAL WITH AUTO IMAGE RESIZER & UPLOADER -->
+    <!-- EDIT / ADD MENU MODAL -->
     <div id="edit-menu-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
             <h3 class="font-bold text-lg text-slate-800" id="modal-menu-title">เพิ่มรายการเมนูใหม่</h3>
@@ -471,8 +492,6 @@
                     <label class="block font-medium text-slate-700 mb-1">ราคา (บาท)</label>
                     <input type="number" id="form-menu-price" min="0" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
-                
-                <!-- อัปโหลดรูปภาพ / ตัวอย่างรูปภาพ -->
                 <div>
                     <label class="block font-medium text-slate-700 mb-1">รูปภาพเมนู (เลือกไฟล์รูป หรือใส่ Emoji/URL)</label>
                     <div class="flex items-center gap-2 mb-2">
@@ -484,7 +503,6 @@
                     </div>
                     <input type="text" id="form-menu-img" placeholder="หรือใส่ Emoji/URL เช่น 🥞" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     
-                    <!-- ตัวอย่างรูปภาพ Preview -->
                     <div class="mt-2 flex items-center gap-2">
                         <span class="text-[11px] text-slate-500">ตัวอย่างรูป:</span>
                         <div id="img-preview" class="w-12 h-12 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden bg-slate-50 text-xl">
@@ -571,9 +589,10 @@
 
     <!-- CORE LOGIC & STATE MANAGEMENT -->
     <script>
-        // APP STATE
         let currentRole = 'cashier';
         let currentTab = 'tab-pos';
+        let userLocation = null; // เก็บค่าพิกัด GPS สำหรับออเดอร์เดลิเวอรี่
+        let customerTelegramChatId = null; // ID แชทของลูกค้าเพื่อส่งแจ้งเตือน
 
         function renderMedia(imgSrc, altName = '') {
             if (!imgSrc) return '<span class="text-xl">🍽️</span>';
@@ -609,10 +628,16 @@
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             const tableParam = urlParams.get('table');
+            const telegramUserParam = urlParams.get('chat_id'); // ลิงก์ที่ลูกค้ากดเข้ามาผ่าน Telegram Mini App
+
+            if (telegramUserParam) {
+                customerTelegramChatId = telegramUserParam;
+            }
 
             if (tableParam) {
                 document.getElementById('cust-table-select').value = tableParam;
                 document.getElementById('pos-table-select').value = tableParam;
+                toggleDeliveryLocationUI(tableParam);
             }
 
             if (modeParam && ['cashier', 'customer', 'kds', 'waiter'].includes(modeParam)) {
@@ -621,7 +646,6 @@
                 changeRoleMode('cashier');
             }
 
-            // Real-time Database Listener - ORDERS
             ordersRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -636,7 +660,6 @@
                 updateKDSBadge();
             });
 
-            // Real-time Database Listener - MENU
             menuRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -654,13 +677,77 @@
                 renderManageMenu();
             });
 
-            // ดักจับการเปลี่ยนแปลงช่องข้อความรูปภาพเพื่ออัปเดต Preview
             document.getElementById('form-menu-img').addEventListener('input', function(e) {
                 document.getElementById('img-preview').innerHTML = renderMedia(e.target.value);
             });
         };
 
-        // ฟังก์ชันย่อขนาดรูปภาพและแปลงเป็น Base64
+        // ====================================================
+        // 📲 TELEGRAM BOT NOTIFICATION FUNCTIONS (API HELPER)
+        // ====================================================
+
+        // 1. ส่งข้อความแจ้งเตือนผ่าน Telegram Bot API
+        function sendTelegramNotification(targetChatId, messageText) {
+            if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN.includes("ใส่_BOT_TOKEN")) return;
+
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: targetChatId,
+                    text: messageText,
+                    parse_mode: 'HTML'
+                })
+            }).catch(err => console.error("Telegram Notification Error:", err));
+        }
+
+        // 2. ส่งปักหมุดตำแหน่งพิกัด GPS (Telegram SendLocation)
+        function sendTelegramLocation(targetChatId, latitude, longitude) {
+            if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN.includes("ใส่_BOT_TOKEN")) return;
+
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendLocation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: targetChatId,
+                    latitude: latitude,
+                    longitude: longitude
+                })
+            }).catch(err => console.error("Telegram Location Error:", err));
+        }
+
+        // 3. ฟังก์ชันดึงพิกัด GPS บนอุปกรณ์ของลูกค้า
+        function getUserGPSLocation() {
+            const display = document.getElementById('location-coords-display');
+            if (navigator.geolocation) {
+                display.innerText = "กำลังดึงพิกัด GPS...";
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        display.innerText = `📍 ละติจูด: ${userLocation.lat.toFixed(5)}, ลองจิจูด: ${userLocation.lng.toFixed(5)}`;
+                    },
+                    (error) => {
+                        alert("ไม่สามารถเข้าถึงพิกัด GPS ได้ โปรดอนุญาตสิทธิ์ในเบราว์เซอร์");
+                        display.innerText = "เกิดข้อผิดพลาดในการดึงพิกัด GPS";
+                    }
+                );
+            } else {
+                alert("อุปกรณ์นี้ไม่รองรับการดึงพิกัด GPS");
+            }
+        }
+
+        function toggleDeliveryLocationUI(tableVal) {
+            const box = document.getElementById('cust-delivery-location-box');
+            if (tableVal === 'Delivery') {
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
         function handleImageUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -674,7 +761,6 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    // กำหนดขนาดสูงสุด 300x300 พิกเซล (ย่อรูปภาพให้ไฟล์เล็ก เหมาะกับ Real-time)
                     const MAX_WIDTH = 300;
                     const MAX_HEIGHT = 300;
                     let width = img.width;
@@ -696,7 +782,6 @@
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // บีบอัดรูปภาพเป็น JPEG คุณภาพ 70%
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                     
                     document.getElementById('form-menu-img').value = dataUrl;
@@ -900,7 +985,7 @@
 
         /* 2. TABLE MONITOR & ORDER MANAGEMENT */
         function renderTableOverview() {
-            const tables = ['T-01', 'T-02', 'T-03', 'T-04', 'T-05', 'Takeaway'];
+            const tables = ['T-01', 'T-02', 'T-03', 'T-04', 'T-05', 'Takeaway', 'Delivery'];
             const container = document.getElementById('table-overview-grid');
 
             container.innerHTML = tables.map(t => {
@@ -911,7 +996,7 @@
                     <div class="p-3 rounded-xl border text-center transition ${isOccupied ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-slate-50 border-slate-200 text-slate-600'}">
                         <div class="font-bold text-sm mb-1">${t}</div>
                         <div class="text-[10px] font-semibold mb-2">
-                            ${isOccupied ? `<span class="bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">มีลูกค้า (฿${activeOrder.total})</span>` : '<span class="text-slate-400">ว่าง</span>'}
+                            ${isOccupied ? `<span class="bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">มีออเดอร์ (฿${activeOrder.total})</span>` : '<span class="text-slate-400">ว่าง</span>'}
                         </div>
                         ${isOccupied ? `
                             <button onclick="quickCheckout('${activeOrder.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] py-1 rounded font-medium">
@@ -944,9 +1029,10 @@
                     <td class="p-3">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                             o.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                            o.status === 'delivering' ? 'bg-indigo-100 text-indigo-700' :
                             o.status === 'cooking' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
                         }">
-                            ${o.status === 'completed' ? 'เสร็จพร้อมเสิร์ฟ' : o.status === 'cooking' ? 'กำลังปรุง' : 'รอปรุง'}
+                            ${o.status === 'completed' ? 'เสร็จสมบูรณ์' : o.status === 'delivering' ? '🛵 กำลังจัดส่ง' : o.status === 'cooking' ? '🍳 กำลังปรุง' : '⏳ รอปรุง'}
                         </span>
                     </td>
                     <td class="p-3">
@@ -971,16 +1057,18 @@
             renderCheckoutDetail(orderId);
         }
 
-        /* 3. KITCHEN DISPLAY SYSTEM (KDS) */
+        /* 3. KITCHEN DISPLAY SYSTEM (KDS) WITH TELEGRAM STATUS UPDATE */
         function renderKDS() {
             const grid = document.getElementById('kds-orders-grid');
             
             const pending = orders.filter(o => o.status === 'pending');
             const cooking = orders.filter(o => o.status === 'cooking');
+            const delivering = orders.filter(o => o.status === 'delivering');
             const completed = orders.filter(o => o.status === 'completed');
 
             document.getElementById('kds-pending-count').innerText = `รอปรุง: ${pending.length}`;
             document.getElementById('kds-cooking-count').innerText = `กำลังปรุง: ${cooking.length}`;
+            document.getElementById('kds-delivering-count').innerText = `กำลังส่ง: ${delivering.length}`;
             document.getElementById('kds-done-count').innerText = `เสร็จแล้ว: ${completed.length}`;
 
             if (orders.length === 0) {
@@ -1001,6 +1089,9 @@
                 } else if (order.status === 'cooking') {
                     headerColor = 'bg-blue-600 text-white';
                     timerBadge = 'bg-blue-100 text-blue-800';
+                } else if (order.status === 'delivering') {
+                    headerColor = 'bg-indigo-600 text-white';
+                    timerBadge = 'bg-indigo-100 text-indigo-800';
                 } else if (order.status === 'completed') {
                     headerColor = 'bg-slate-600 text-slate-200';
                     timerBadge = 'bg-slate-200 text-slate-700';
@@ -1035,17 +1126,36 @@
                                         <strong>หมายเหตุ:</strong> ${order.note}
                                     </div>
                                 ` : ''}
+
+                                ${order.location ? `
+                                    <div class="bg-blue-50 border border-blue-200 text-blue-800 p-2 rounded-lg text-[11px] mt-2">
+                                        <strong>📍 พิกัดส่งเดลิเวอรี่:</strong>
+                                        <a href="https://www.google.com/maps?q=${order.location.lat},${order.location.lng}" target="_blank" class="text-blue-600 underline font-bold block mt-0.5">
+                                            เปิดนำทางใน Google Maps 🗺️
+                                        </a>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
 
-                        <div class="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                        <div class="p-3 bg-slate-50 border-t border-slate-100 flex flex-col gap-1.5">
                             ${order.status === 'pending' ? `
                                 <button onclick="updateOrderStatus('${order.id}', 'cooking')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow">
                                     <i class="fa-solid fa-fire mr-1"></i> เริ่มปรุงอาหาร
                                 </button>
                             ` : order.status === 'cooking' ? `
+                                ${order.table === 'Delivery' ? `
+                                    <button onclick="updateOrderStatus('${order.id}', 'delivering')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow">
+                                        <i class="fa-solid fa-motorcycle mr-1"></i> ปรุงเสร็จ - ส่งไรเดอร์
+                                    </button>
+                                ` : `
+                                    <button onclick="updateOrderStatus('${order.id}', 'completed')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow">
+                                        <i class="fa-solid fa-check mr-1"></i> ปรุงเสร็จพร้อมเสิร์ฟ
+                                    </button>
+                                `}
+                            ` : order.status === 'delivering' ? `
                                 <button onclick="updateOrderStatus('${order.id}', 'completed')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow">
-                                    <i class="fa-solid fa-check mr-1"></i> ปรุงเสร็จแล้ว
+                                    <i class="fa-solid fa-house-circle-check mr-1"></i> จัดส่งถึงลูกค้าเรียบร้อย
                                 </button>
                             ` : `
                                 <button onclick="updateOrderStatus('${order.id}', 'pending')" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1.5 rounded-lg text-xs">
@@ -1058,9 +1168,26 @@
             }).join('');
         }
 
+        // อัปเดตสถานะออเดอร์ พร้อมยิงข้อความแจ้งลูกค้า/พนักงานผ่าน Telegram Bot API
         function updateOrderStatus(orderId, newStatus) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
             ordersRef.child(orderId).update({ status: newStatus }).then(() => {
                 playSound('newOrder');
+
+                // 1. แจ้งเตือนอัปเดตสถานะกลับไปยังลูกค้า
+                if (order.customerChatId) {
+                    let statusMsg = "";
+                    if (newStatus === 'cooking') {
+                        statusMsg = `🍳 <b>อัปเดตสถานะออเดอร์ #${order.id}</b>\nห้องครัวกำลังเริ่มปรุงอาหารของคุณแล้วครับ!`;
+                    } else if (newStatus === 'delivering') {
+                        statusMsg = `🛵 <b>อัปเดตสถานะออเดอร์ #${order.id}</b>\nอาหารปรุงเสร็จแล้ว ไรเดอร์กำลังนำอาหารไปส่งครับ!`;
+                    } else if (newStatus === 'completed') {
+                        statusMsg = `✅ <b>อัปเดตสถานะออเดอร์ #${order.id}</b>\nจัดส่ง/เสิร์ฟ อาหารเรียบร้อยแล้ว ขอบคุณที่ใช้บริการครับ! 🙏`;
+                    }
+                    if (statusMsg) sendTelegramNotification(order.customerChatId, statusMsg);
+                }
             });
         }
 
@@ -1516,6 +1643,7 @@
             if (customerCart.length === 0) toggleCartModal(false);
         }
 
+        // ฟังก์ชันสั่งซื้อฝั่งลูกค้า พร้อมยิงพิกัด GPS & ข้อความเข้า Telegram พนักงาน
         function submitCustomerOrder() {
             if (customerCart.length === 0) return;
 
@@ -1535,7 +1663,9 @@
                 note: note,
                 status: 'pending',
                 paid: false,
-                paymentMethod: '-'
+                paymentMethod: '-',
+                location: userLocation, // ค่า GPS { lat, lng }
+                customerChatId: customerTelegramChatId
             };
 
             ordersRef.child(orderId).set(newOrder).then(() => {
@@ -1545,7 +1675,28 @@
                 document.getElementById('cart-note').value = '';
 
                 playSound('newOrder');
-                alert(`✅ ส่งออเดอร์ ${newOrder.id} (${table}) เข้าห้องครัวเรียบร้อยแล้ว!`);
+                alert(`✅ ส่งออเดอร์ ${newOrder.id} เรียบร้อยแล้ว!`);
+
+                // 🔔 ยิงแจ้งเตือนเข้ากลุ่ม Telegram ของพนักงาน
+                const itemsListText = newOrder.items.map(i => `• ${i.name} (x${i.qty}) - ฿${i.price * i.qty}`).join('\n');
+                let staffMessage = `🚨 <b>ออเดอร์ใหม่เข้ามาแล้ว! [#${newOrder.id}]</b>\n`;
+                staffMessage += `📍 <b>ประเภท/โต๊ะ:</b> ${newOrder.table}\n`;
+                staffMessage += `⏰ <b>เวลาสั่ง:</b> ${newOrder.time}\n`;
+                staffMessage += `📝 <b>รายการอาหาร:</b>\n${itemsListText}\n`;
+                staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
+                if (newOrder.note) staffMessage += `💬 <b>หมายเหตุ:</b> ${newOrder.note}\n`;
+
+                sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, staffMessage);
+
+                // 📍 ถ้าเป็นออเดอร์ Delivery และมีพิกัด GPS ให้ปักหมุดส่งเข้ากลุ่ม Telegram ไรเดอร์นำทางทันที
+                if (newOrder.table === 'Delivery' && userLocation) {
+                    sendTelegramLocation(TELEGRAM_STAFF_GROUP_ID, userLocation.lat, userLocation.lng);
+                }
+
+                // 📩 ยิงข้อความยืนยันรับออเดอร์กลับไปหาลูกค้าใน Telegram
+                if (customerTelegramChatId) {
+                    sendTelegramNotification(customerTelegramChatId, `🎉 <b>รับออเดอร์ #${newOrder.id} เรียบร้อยแล้ว!</b>\nทางร้านกำลังเตรียมปรุงอาหารให้คุณครับ สามารถติดตามสถานะได้ใน Mini App`);
+                }
             });
         }
     </script>
