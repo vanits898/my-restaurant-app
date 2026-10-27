@@ -1490,6 +1490,38 @@
         }
       }
     }
+        // ==========================================
+    // โค้ดระบบแยกสิทธิ์ตาม URL (ลูกค้า / ครัว / แคชเชียร์)
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const mode = urlParams.get('mode');
+
+      // ค้นหา Dropdown เมนูสลับสิทธิ์
+      const roleSelector = document.getElementById('roleSelector') || 
+                           document.querySelector('select') || 
+                           document.getElementById('roleSelectorContainer');
+
+      if (mode === 'customer') {
+        // 1. โหมดลูกค้า: ซ่อนตัวเลือกสิทธิ์ทันที เพื่อไม่ให้สลับโหมดได้
+        if (roleSelector) {
+          const parentContainer = roleSelector.closest('.mb-4') || roleSelector.parentElement;
+          if (parentContainer) parentContainer.style.display = 'none';
+          else roleSelector.style.display = 'none';
+        }
+        // สลับไปหน้าลูกค้า
+        if (typeof switchRole === 'function') switchRole('customer');
+
+      } else if (mode === 'kds') {
+        // 2. โหมดห้องครัว: สลับไปหน้าจอสั่งปรุงในครัวทันที
+        if (typeof switchRole === 'function') switchRole('kds');
+
+      } else if (mode === 'waiter') {
+        // 3. โหมดพนักงานเสิร์ฟ
+        if (typeof switchRole === 'function') switchRole('waiter');
+      }
+      // ถ้าไม่มี mode ระบุ (เช่น admin เข้าใช้งาน) ระบบจะเปิดหน้าแคชเชียร์เต็มรูปแบบตามปกติ
+    });
     </script>
 </body>
 </html>
