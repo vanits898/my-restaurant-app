@@ -247,13 +247,13 @@
                     <span class="bg-red-500 text-white p-2.5 rounded-xl"><i class="fa-solid fa-fire-burner text-xl"></i></span>
                     <div>
                         <h2 class="font-bold text-lg leading-tight">Kitchen Display System (จอครัว)</h2>
-                        <p class="text-xs text-slate-400">ระบบแสดงออเดอร์สำหรับห้องครัวแบบ Real-time</p>
+                        <p class="text-xs text-slate-400">ระบบแสดงออเดอร์สำหรับห้องครัวและไรเดอร์แบบ Real-time</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 text-xs">
                     <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-pending-count">รอปรุง: 0</span>
                     <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-cooking-count">กำลังปรุง: 0</span>
-                    <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-delivering-count">กำลังส่ง: 0</span>
+                    <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-delivering-count">🛵 กำลังส่ง: 0</span>
                     <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-done-count">เสร็จแล้ว: 0</span>
                 </div>
             </div>
@@ -576,9 +576,9 @@
                     // 🔔 เสียงแจ้งเตือนออเดอร์ใหม่: เสียง "ปิ๊ป-ปิ๊ป" ดัง ชัดเจน (High Volume Double Beep)
                     const osc1 = ctx.createOscillator();
                     const gain1 = ctx.createGain();
-                    osc1.type = 'square'; // คลื่นรูปสี่เหลี่ยม เสียงจะแน่นและดังชัดขึ้น
-                    osc1.frequency.setValueAtTime(783.99, ctx.currentTime); // โน้ต G5
-                    gain1.gain.setValueAtTime(0.8, ctx.currentTime); // เพิ่มระดับความดังเป็น 0.8
+                    osc1.type = 'square';
+                    osc1.frequency.setValueAtTime(783.99, ctx.currentTime);
+                    gain1.gain.setValueAtTime(0.8, ctx.currentTime);
                     gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
                     osc1.connect(gain1);
                     gain1.connect(ctx.destination);
@@ -588,8 +588,8 @@
                     const osc2 = ctx.createOscillator();
                     const gain2 = ctx.createGain();
                     osc2.type = 'square';
-                    osc2.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.22); // โน้ต C6
-                    gain2.gain.setValueAtTime(1.0, ctx.currentTime + 0.22); // ปรับความดังสูงสุด 1.0
+                    osc2.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.22);
+                    gain2.gain.setValueAtTime(1.0, ctx.currentTime + 0.22);
                     gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.55);
                     osc2.connect(gain2);
                     gain2.connect(ctx.destination);
@@ -1088,10 +1088,10 @@
                     <td class="p-3">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                             o.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                            o.status === 'delivering' ? 'bg-indigo-100 text-indigo-700' :
+                            o.status === 'delivering' ? 'bg-indigo-100 text-indigo-700 font-bold animate-pulse' :
                             o.status === 'cooking' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
                         }">
-                            ${o.status === 'completed' ? 'เสร็จสมบูรณ์' : o.status === 'delivering' ? '🛵 กำลังจัดส่ง' : o.status === 'cooking' ? '🍳 กำลังปรุง' : '⏳ รอปรุง'}
+                            ${o.status === 'completed' ? 'เสร็จสมบูรณ์' : o.status === 'delivering' ? '🛵 ไรเดอร์กำลังจัดส่ง' : o.status === 'cooking' ? '🍳 กำลังปรุง' : '⏳ รอปรุง'}
                         </span>
                     </td>
                     <td class="p-3">
@@ -1128,7 +1128,7 @@
 
             document.getElementById('kds-pending-count').innerText = `รอปรุง: ${pending.length}`;
             document.getElementById('kds-cooking-count').innerText = `กำลังปรุง: ${cooking.length}`;
-            document.getElementById('kds-delivering-count').innerText = `กำลังส่ง: ${delivering.length}`;
+            document.getElementById('kds-delivering-count').innerText = `🛵 กำลังส่ง: ${delivering.length}`;
             document.getElementById('kds-done-count').innerText = `เสร็จแล้ว: ${completed.length}`;
 
             if (orders.length === 0) {
@@ -1220,8 +1220,8 @@
                                     </button>
                                 `}
                             ` : order.status === 'delivering' ? `
-                                <button onclick="updateOrderStatus('${order.id}', 'completed')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow">
-                                    <i class="fa-solid fa-house-circle-check mr-1"></i> จัดส่งถึงลูกค้าเรียบร้อย
+                                <button onclick="updateOrderStatus('${order.id}', 'completed')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow animate-bounce">
+                                    <i class="fa-solid fa-house-circle-check mr-1"></i> 🛵 ไรเดอร์: จัดส่งถึงลูกค้าเรียบร้อย
                                 </button>
                             ` : `
                                 <button onclick="updateOrderStatus('${order.id}', 'pending')" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1.5 rounded-lg text-xs">
@@ -1248,7 +1248,11 @@
                     statusMsg = `🛵 <b>อัปเดตสถานะออเดอร์ #${order.id} (${order.table})</b>\nอาหารปรุงเสร็จแล้ว ไรเดอร์กำลังนำอาหารไปจัดส่งครับ!`;
                     if (order.phone && order.phone !== '-') statusMsg += `\n📞 เบอร์ติดต่อลูกค้า: ${order.phone}`;
                 } else if (newStatus === 'completed') {
-                    statusMsg = `✅ <b>อัปเดตสถานะออเดอร์ #${order.id} (${order.table})</b>\nจัดส่ง/เสิร์ฟ อาหารเรียบร้อยแล้ว ขอบคุณที่ใช้บริการครับ! 🙏`;
+                    if (order.table === 'Delivery') {
+                        statusMsg = `✅ <b>อัปเดตสถานะออเดอร์ #${order.id} (${order.table})</b>\n🛵 ไรเดอร์จัดส่งอาหารถึงมือคุณเรียบร้อยแล้ว ขอบคุณที่อุดหนุนครับ! 🙏ทานให้อร่อยนะครับ`;
+                    } else {
+                        statusMsg = `✅ <b>อัปเดตสถานะออเดอร์ #${order.id} (${order.table})</b>\nจัดส่ง/เสิร์ฟ อาหารเรียบร้อยแล้ว ขอบคุณที่ใช้บริการครับ! 🙏`;
+                    }
                 }
 
                 if (statusMsg) {
