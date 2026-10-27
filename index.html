@@ -313,9 +313,40 @@
 
         <!-- TAB 6: REPORTS -->
         <section id="tab-reports" class="tab-content hidden space-y-5">
+            <!-- DATE TIME FILTER BAR & EXPORT BUTTON -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-blue-600"></i> กรองรายงานตามวัน-เวลา
+                    </h3>
+                    <button onclick="exportReportsToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-file-excel text-base"></i> Export เป็น Excel / CSV
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block text-slate-600 font-semibold mb-1">เริ่มต้น (Start Date-Time)</label>
+                        <input type="datetime-local" id="report-start-datetime" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-slate-600 font-semibold mb-1">สิ้นสุด (End Date-Time)</label>
+                        <input type="datetime-local" id="report-end-datetime" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50">
+                    </div>
+                    <div class="flex items-end gap-2 md:col-span-2">
+                        <button onclick="applyReportFilter()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition shadow text-xs">
+                            <i class="fa-solid fa-magnifying-glass mr-1"></i> กรองข้อมูล
+                        </button>
+                        <button onclick="clearReportFilter()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg transition text-xs">
+                            ล้างการกรอง
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-xs text-slate-400 font-medium">ยอดขายรวมวันนี้</span>
+                    <span class="text-xs text-slate-400 font-medium">ยอดขายรวมช่วงนี้</span>
                     <h4 class="text-2xl font-bold text-emerald-600 mt-1" id="report-total-revenue">฿0</h4>
                 </div>
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
@@ -339,7 +370,7 @@
                         <thead class="bg-slate-50 text-slate-700 font-semibold uppercase">
                             <tr>
                                 <th class="p-3">เลขที่</th>
-                                <th class="p-3">เวลา</th>
+                                <th class="p-3">วันที่-เวลา</th>
                                 <th class="p-3">โต๊ะ/ประเภท</th>
                                 <th class="p-3">รายการอาหาร</th>
                                 <th class="p-3">ราคารวม</th>
@@ -620,6 +651,10 @@
         let currentTab = 'tab-pos';
         let userLocation = null; 
         let customerTelegramChatId = null; 
+
+        // ตัวแปรสำหรับฟิลเตอร์รายงาน
+        let reportFilterStart = null;
+        let reportFilterEnd = null;
 
         function renderMedia(imgSrc, altName = '') {
             if (!imgSrc) return '<span class="text-xl">🍽️</span>';
@@ -1001,9 +1036,14 @@
             }
 
             const orderId = 'ORD-' + Math.floor(100 + Math.random() * 900);
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('th-TH');
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
             const newOrder = {
                 id: orderId,
-                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+                date: dateStr,
+                time: timeStr,
                 timestamp: Date.now(),
                 table: table,
                 channel: channel,
@@ -1032,7 +1072,6 @@
                 staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
                 if (newOrder.note) staffMessage += `💬 <b>หมายเหตุ:</b> ${newOrder.note}\n`;
 
-                // 📌 เพิ่มปุ่มกด Web App ในกลุ่ม Telegram ไรเดอร์
                 const currentAppUrl = window.location.origin + window.location.pathname;
                 const riderKeyboard = {
                     inline_keyboard: [
@@ -1471,17 +1510,55 @@
             closeEditMenuModal();
         }
 
-        /* 6. REPORTS & RECEIPT */
+        /* 6. REPORTS, DATE FILTER & EXPORT EXCEL/CSV */
+        function getFilteredOrders() {
+            return orders.filter(o => {
+                if (!reportFilterStart && !reportFilterEnd) return true;
+                const orderTime = o.timestamp || 0;
+                let passStart = true;
+                let passEnd = true;
+
+                if (reportFilterStart) {
+                    passStart = orderTime >= new Date(reportFilterStart).getTime();
+                }
+                if (reportFilterEnd) {
+                    passEnd = orderTime <= new Date(reportFilterEnd).getTime();
+                }
+
+                return passStart && passEnd;
+            });
+        }
+
+        function applyReportFilter() {
+            const startVal = document.getElementById('report-start-datetime').value;
+            const endVal = document.getElementById('report-end-datetime').value;
+
+            reportFilterStart = startVal || null;
+            reportFilterEnd = endVal || null;
+
+            renderReports();
+        }
+
+        function clearReportFilter() {
+            document.getElementById('report-start-datetime').value = '';
+            document.getElementById('report-end-datetime').value = '';
+            reportFilterStart = null;
+            reportFilterEnd = null;
+
+            renderReports();
+        }
+
         function renderReports() {
-            const paidOrders = orders.filter(o => o.paid);
+            const filteredOrders = getFilteredOrders();
+            const paidOrders = filteredOrders.filter(o => o.paid);
             const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
 
             document.getElementById('report-total-revenue').innerText = `฿${totalRevenue.toLocaleString()}`;
-            document.getElementById('report-total-orders').innerText = `${orders.length} ออเดอร์`;
+            document.getElementById('report-total-orders').innerText = `${filteredOrders.length} ออเดอร์`;
             document.getElementById('report-paid-count').innerText = `${paidOrders.length} รายการ`;
 
             const itemCounts = {};
-            orders.forEach(o => {
+            filteredOrders.forEach(o => {
                 o.items.forEach(i => {
                     itemCounts[i.name] = (itemCounts[i.name] || 0) + i.qty;
                 });
@@ -1498,10 +1575,15 @@
             document.getElementById('report-top-item').innerText = topItem;
 
             const tbody = document.getElementById('report-orders-table');
-            tbody.innerHTML = orders.map(o => `
+            if (filteredOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบรายการออเดอร์ในช่วงเวลาที่เลือก</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredOrders.map(o => `
                 <tr class="hover:bg-slate-50">
                     <td class="p-3 font-mono font-bold text-slate-700">${o.id}</td>
-                    <td class="p-3 text-slate-500">${o.time}</td>
+                    <td class="p-3 text-slate-500">${o.date || ''} ${o.time}</td>
                     <td class="p-3 font-semibold text-slate-800">${o.table}</td>
                     <td class="p-3 text-slate-600 max-w-xs truncate">${o.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</td>
                     <td class="p-3 font-bold text-emerald-600">฿${o.total}</td>
@@ -1519,12 +1601,46 @@
             `).join('');
         }
 
+        function exportReportsToCSV() {
+            const list = getFilteredOrders();
+            if (list.length === 0) {
+                alert("ไม่มีข้อมูลออเดอร์สำหรับ Export");
+                return;
+            }
+
+            // เพิ่ม BOM สำหรับรองรับภาษาไทยใน Microsoft Excel
+            let csvContent = "\uFEFF";
+            csvContent += "เลขที่ออเดอร์,วันที่-เวลา,โต๊ะ/ประเภท,ช่องทางสั่งซื้อ,เบอร์โทรศัพท์,รายการอาหาร,ราคารวม (บาท),สถานะการชำระเงิน,ช่องทางชำระเงิน\n";
+
+            list.forEach(o => {
+                const dateTimeStr = `"${(o.date || '')} ${o.time}"`;
+                const tableStr = `"${o.table}"`;
+                const channelStr = `"${o.channel || '-'}"`;
+                const phoneStr = `"${o.phone || '-'}"`;
+                const itemsStr = `"${o.items.map(i => `${i.name} x${i.qty}`).join(' / ')}"`;
+                const totalStr = o.total;
+                const paidStr = o.paid ? '"ชำระแล้ว"' : '"ยังไม่ชำระ"';
+                const methodStr = `"${o.paymentMethod || '-'}"`;
+
+                csvContent += `${o.id},${dateTimeStr},${tableStr},${channelStr},${phoneStr},${itemsStr},${totalStr},${paidStr},${methodStr}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `SalesReport_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function openReceiptModal(orderId) {
             const order = orders.find(o => o.id === orderId);
             if (!order) return;
 
             document.getElementById('rec-id').innerText = `Order #${order.id}`;
-            document.getElementById('rec-date').innerText = `วันที่: ${new Date().toLocaleDateString('th-TH')} ${order.time}`;
+            document.getElementById('rec-date').innerText = `วันที่: ${order.date || new Date().toLocaleDateString('th-TH')} ${order.time}`;
             document.getElementById('rec-table').innerText = order.table;
             document.getElementById('rec-total').innerText = `฿${order.total}`;
             document.getElementById('rec-payment-method').innerText = order.paymentMethod;
@@ -1742,9 +1858,14 @@
             }
 
             const orderId = 'ORD-' + Math.floor(100 + Math.random() * 900);
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('th-TH');
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
             const newOrder = {
                 id: orderId,
-                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+                date: dateStr,
+                time: timeStr,
                 timestamp: Date.now(),
                 table: table,
                 channel: 'Telegram Mini App',
@@ -1778,7 +1899,6 @@
                 staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
                 if (newOrder.note) staffMessage += `💬 <b>หมายเหตุ:</b> ${newOrder.note}\n`;
 
-                // 📌 เพิ่มปุ่มกด Web App ในกลุ่ม Telegram ไรเดอร์
                 const currentAppUrl = window.location.origin + window.location.pathname;
                 const riderKeyboard = {
                     inline_keyboard: [
