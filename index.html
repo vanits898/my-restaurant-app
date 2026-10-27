@@ -33,7 +33,7 @@
         }
         const database = firebase.database();
         const ordersRef = database.ref('orders');
-        const menuRef = database.ref('menu'); // ฐานข้อมูลสำหรับซิงค์รายการเมนู Real-time
+        const menuRef = database.ref('menu');
 
         tailwind.config = {
             theme: {
@@ -448,7 +448,7 @@
 
     </main>
 
-    <!-- EDIT / ADD MENU MODAL -->
+    <!-- EDIT / ADD MENU MODAL WITH AUTO IMAGE RESIZER & UPLOADER -->
     <div id="edit-menu-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
             <h3 class="font-bold text-lg text-slate-800" id="modal-menu-title">เพิ่มรายการเมนูใหม่</h3>
@@ -471,10 +471,28 @@
                     <label class="block font-medium text-slate-700 mb-1">ราคา (บาท)</label>
                     <input type="number" id="form-menu-price" min="0" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
+                
+                <!-- อัปโหลดรูปภาพ / ตัวอย่างรูปภาพ -->
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">รูปภาพ (Emoji หรือ URL รูปภาพ / ชื่อไฟล์)</label>
-                    <input type="text" id="form-menu-img" placeholder="เช่น 🥞 หรือ images1.jpg" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <label class="block font-medium text-slate-700 mb-1">รูปภาพเมนู (เลือกไฟล์รูป หรือใส่ Emoji/URL)</label>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="file" id="form-menu-file" accept="image/*" onchange="handleImageUpload(event)" class="hidden">
+                        <button type="button" onclick="document.getElementById('form-menu-file').click()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-upload"></i> อัปโหลดรูปภาพ
+                        </button>
+                        <span id="upload-status" class="text-[11px] text-slate-400">ยังไม่ได้เลือกไฟล์</span>
+                    </div>
+                    <input type="text" id="form-menu-img" placeholder="หรือใส่ Emoji/URL เช่น 🥞" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    
+                    <!-- ตัวอย่างรูปภาพ Preview -->
+                    <div class="mt-2 flex items-center gap-2">
+                        <span class="text-[11px] text-slate-500">ตัวอย่างรูป:</span>
+                        <div id="img-preview" class="w-12 h-12 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden bg-slate-50 text-xl">
+                            🍽️
+                        </div>
+                    </div>
                 </div>
+
                 <div class="flex justify-end gap-2 pt-3 border-t">
                     <button type="button" onclick="closeEditMenuModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium">ยกเลิก</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">บันทึกข้อมูล</button>
@@ -559,13 +577,12 @@
 
         function renderMedia(imgSrc, altName = '') {
             if (!imgSrc) return '<span class="text-xl">🍽️</span>';
-            if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://') || imgSrc.includes('.')) {
+            if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://') || imgSrc.startsWith('data:image/') || imgSrc.includes('.')) {
                 return `<img src="${imgSrc}" alt="${altName}" class="w-full h-full object-cover rounded-lg">`;
             }
             return `<span class="text-xl">${imgSrc}</span>`;
         }
 
-        // เมนูเริ่มต้น (ใช้เฉพาะตอนครั้งแรกสุดที่ยังไม่มีเมนูใน Firebase)
         const initialMenuItems = [
             { id: 1, name: 'ผัดกะเพราหมูกรอบ ไข่ดาว', category: 'อาหารจานเดียว', price: 65, img: '🍲', available: true, spicyOpt: true, addons: [{name: 'เพิ่มไข่ดาว', price: 10}, {name: 'เพิ่มข้าว', price: 10}] },
             { id: 2, name: 'ข้าวผัดต้มยำกุ้งสด', category: 'อาหารจานเดียว', price: 80, img: '🍚', available: true, spicyOpt: true, addons: [{name: 'เพิ่มไข่ดาว', price: 10}] },
@@ -619,13 +636,12 @@
                 updateKDSBadge();
             });
 
-            // Real-time Database Listener - MENU (ซิงค์รายการเมนูข้ามอุปกรณ์)
+            // Real-time Database Listener - MENU
             menuRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     menuItems = Object.values(data);
                 } else {
-                    // หากฐานข้อมูลเมนูบน Cloud ยังว่าง ให้ตั้งค่าเมนูเริ่มต้นขึ้น Cloud
                     initialMenuItems.forEach(item => {
                         menuRef.child(item.id).set(item);
                     });
@@ -637,7 +653,60 @@
                 renderCustomerMenu();
                 renderManageMenu();
             });
+
+            // ดักจับการเปลี่ยนแปลงช่องข้อความรูปภาพเพื่ออัปเดต Preview
+            document.getElementById('form-menu-img').addEventListener('input', function(e) {
+                document.getElementById('img-preview').innerHTML = renderMedia(e.target.value);
+            });
         };
+
+        // ฟังก์ชันย่อขนาดรูปภาพและแปลงเป็น Base64
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('upload-status').innerText = 'กำลังย่อรูป...';
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // กำหนดขนาดสูงสุด 300x300 พิกเซล (ย่อรูปภาพให้ไฟล์เล็ก เหมาะกับ Real-time)
+                    const MAX_WIDTH = 300;
+                    const MAX_HEIGHT = 300;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // บีบอัดรูปภาพเป็น JPEG คุณภาพ 70%
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    document.getElementById('form-menu-img').value = dataUrl;
+                    document.getElementById('img-preview').innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover rounded-lg">`;
+                    document.getElementById('upload-status').innerText = '✅ อัปโหลดสำเร็จ';
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
 
         function changeRoleMode(role) {
             currentRole = role;
@@ -1089,7 +1158,7 @@
             });
         }
 
-        /* 5. MENU MANAGEMENT (REAL-TIME UPDATED) */
+        /* 5. MENU MANAGEMENT */
         function renderManageMenu() {
             const table = document.getElementById('manage-menu-table');
             table.innerHTML = menuItems.map(item => `
@@ -1129,6 +1198,9 @@
             document.getElementById('form-menu-name').value = '';
             document.getElementById('form-menu-price').value = '';
             document.getElementById('form-menu-img').value = '🍱';
+            document.getElementById('img-preview').innerHTML = renderMedia('🍱');
+            document.getElementById('upload-status').innerText = 'ยังไม่ได้เลือกไฟล์';
+            document.getElementById('form-menu-file').value = '';
             document.getElementById('edit-menu-modal').classList.remove('hidden');
         }
 
@@ -1142,6 +1214,9 @@
             document.getElementById('form-menu-cat').value = item.category;
             document.getElementById('form-menu-price').value = item.price;
             document.getElementById('form-menu-img').value = item.img;
+            document.getElementById('img-preview').innerHTML = renderMedia(item.img, item.name);
+            document.getElementById('upload-status').innerText = 'ยังไม่ได้เลือกไฟล์';
+            document.getElementById('form-menu-file').value = '';
 
             document.getElementById('edit-menu-modal').classList.remove('hidden');
         }
@@ -1159,9 +1234,7 @@
             const img = document.getElementById('form-menu-img').value;
 
             if (idInput) {
-                // แก้ไขเมนูเดิม
                 const targetId = parseInt(idInput);
-                const existingItem = menuItems.find(i => i.id === targetId);
                 menuRef.child(targetId).update({
                     name: name,
                     category: cat,
@@ -1169,7 +1242,6 @@
                     img: img
                 });
             } else {
-                // เพิ่มเมนูใหม่ลง Firebase
                 const newId = Date.now();
                 const newItem = {
                     id: newId,
