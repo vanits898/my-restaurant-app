@@ -74,7 +74,7 @@
             </div>
         </div>
 
-        <!-- CASHIER MAIN NAVIGATION BAR (Shows ALL Tabs when in Cashier Mode) -->
+        <!-- CASHIER MAIN NAVIGATION BAR -->
         <nav id="cashier-navbar" class="bg-slate-800 border-t border-slate-700/80 px-4 py-1.5 overflow-x-auto">
             <div class="max-w-7xl mx-auto flex space-x-1.5 text-xs">
                 <button onclick="switchTab('tab-pos')" id="btn-tab-pos" class="nav-btn px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700 whitespace-nowrap">
@@ -106,39 +106,25 @@
     <!-- MAIN APP CONTAINER -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5">
 
-        <!-- ========================================== -->
-        <!-- TAB 1: CASHIER POS / TAKE ORDER            -->
-        <!-- ========================================== -->
+        <!-- TAB 1: CASHIER POS -->
         <section id="tab-pos" class="tab-content hidden space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                
-                <!-- Left Menu Grid -->
                 <div class="lg:col-span-7 xl:col-span-8 space-y-4">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                         <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
                             <h3 class="font-bold text-slate-800 text-base">รายการอาหาร (POS หน้าร้าน)</h3>
-                            <!-- Categories Filter Buttons -->
-                            <div class="flex overflow-x-auto gap-1.5 py-1" id="pos-cat-buttons">
-                                <!-- JS inserts categories -->
-                            </div>
+                            <div class="flex overflow-x-auto gap-1.5 py-1" id="pos-cat-buttons"></div>
                         </div>
-
-                        <!-- Menu Cards Grid -->
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="pos-menu-grid">
-                            <!-- JS inserts menu items -->
-                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="pos-menu-grid"></div>
                     </div>
                 </div>
 
-                <!-- Right Ticket Summary (Order Entry) -->
                 <div class="lg:col-span-5 xl:col-span-4">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sticky top-20 flex flex-col min-h-[520px]">
                         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                             <h3 class="font-bold text-slate-800 text-base">ตั๋วสั่งอาหารใหม่</h3>
                             <button onclick="clearPosCart()" class="text-xs text-red-500 hover:underline"><i class="fa-solid fa-trash"></i> ล้างตาราง</button>
                         </div>
-
-                        <!-- Table & Customer Type Picker -->
                         <div class="grid grid-cols-2 gap-2 my-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">เลือกโต๊ะ</label>
@@ -160,18 +146,12 @@
                                 </select>
                             </div>
                         </div>
-
-                        <!-- Ticket Items List -->
                         <div class="flex-1 overflow-y-auto max-h-[260px] space-y-2 my-2 border-y border-slate-100 py-2 pr-1" id="pos-cart-items">
                             <p class="text-xs text-slate-400 text-center py-10">คลิกเลือกเมนูจากฝั่งซ้ายเพื่อสั่งซื้อ</p>
                         </div>
-
-                        <!-- Note Field -->
                         <div class="my-2">
                             <input type="text" id="pos-note" placeholder="หมายเหตุเพิ่มเติมถึงห้องครัว..." class="w-full border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
-
-                        <!-- Price Total & Action Buttons -->
                         <div class="pt-3 border-t border-slate-200 space-y-2">
                             <div class="flex justify-between font-bold text-lg text-slate-800">
                                 <span>ราคารวมทั้งสิ้น:</span>
@@ -188,27 +168,19 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- TAB 2: LIVE ORDERS & TABLE MONITOR         -->
-        <!-- ========================================== -->
+        <!-- TAB 2: LIVE ORDERS & TABLES -->
         <section id="tab-tables" class="tab-content hidden space-y-4">
-            <!-- Table Status Overview Cards -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                 <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center justify-between">
                     <span><i class="fa-solid fa-chair text-amber-500 mr-2"></i>ผังโต๊ะอาหารและสถานะปัจจุบัน</span>
                     <span class="text-xs font-normal text-slate-500">อัปเดตแบบ Real-time</span>
                 </h3>
-
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3" id="table-overview-grid">
-                    <!-- JS inserts table cards -->
-                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3" id="table-overview-grid"></div>
             </div>
 
-            <!-- Active Orders Detailed Table -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                 <h3 class="font-bold text-slate-800 text-base mb-3">รายการออเดอร์ที่กำลังดำเนินการ</h3>
                 <div class="overflow-x-auto">
@@ -225,19 +197,14 @@
                                 <th class="p-3 text-center">จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody id="active-orders-table-body" class="divide-y divide-slate-100">
-                            <!-- JS inserts active orders -->
-                        </tbody>
+                        <tbody id="active-orders-table-body" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- TAB 3: KITCHEN DISPLAY SYSTEM (KDS)        -->
-        <!-- ========================================== -->
+        <!-- TAB 3: KDS -->
         <section id="tab-kds" class="tab-content hidden space-y-4">
-            <!-- KDS Header Bar -->
             <div class="bg-slate-800 text-white rounded-2xl p-4 flex flex-wrap justify-between items-center gap-3 shadow-md">
                 <div class="flex items-center space-x-3">
                     <span class="bg-red-500 text-white p-2.5 rounded-xl"><i class="fa-solid fa-fire-burner text-xl"></i></span>
@@ -246,37 +213,25 @@
                         <p class="text-xs text-slate-400">ระบบแสดงออเดอร์สำหรับห้องครัวแบบ Real-time</p>
                     </div>
                 </div>
-
                 <div class="flex items-center gap-3 text-xs">
                     <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-pending-count">รอปรุง: 0</span>
                     <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-cooking-count">กำลังปรุง: 0</span>
                     <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg font-semibold" id="kds-done-count">เสร็จแล้ว: 0</span>
                 </div>
             </div>
-
-            <!-- Active Orders Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="kds-orders-grid">
-                <!-- JS inserts KDS order cards -->
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="kds-orders-grid"></div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- TAB 4: CHECKOUT & BILLING (CASHIER)        -->
-        <!-- ========================================== -->
+        <!-- TAB 4: CHECKOUT -->
         <section id="tab-checkout" class="tab-content hidden space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                
-                <!-- Table Selection for Payment -->
                 <div class="lg:col-span-5 space-y-4">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                         <h3 class="font-bold text-slate-800 text-base mb-3"><i class="fa-solid fa-cash-register text-emerald-600 mr-2"></i>เลือกโต๊ะที่ต้องการเช็คบิล</h3>
-                        <div class="space-y-2.5" id="checkout-pending-tables">
-                            <!-- JS inserts tables with pending bills -->
-                        </div>
+                        <div class="space-y-2.5" id="checkout-pending-tables"></div>
                     </div>
                 </div>
 
-                <!-- Billing & Payment Panel -->
                 <div class="lg:col-span-7">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4" id="billing-panel">
                         <div class="text-center py-12 text-slate-400">
@@ -285,13 +240,10 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- TAB 5: MENU & PRICE MANAGEMENT            -->
-        <!-- ========================================== -->
+        <!-- TAB 5: MENU MANAGEMENT -->
         <section id="tab-menu" class="tab-content hidden space-y-4">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-200 pb-4">
@@ -303,7 +255,6 @@
                         <i class="fa-solid fa-plus"></i> เพิ่มเมนูใหม่
                     </button>
                 </div>
-
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs text-slate-600">
                         <thead class="bg-slate-50 text-slate-700 uppercase font-semibold">
@@ -316,19 +267,14 @@
                                 <th class="p-3 text-center">จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody id="manage-menu-table" class="divide-y divide-slate-100">
-                            <!-- JS inserts menu items -->
-                        </tbody>
+                        <tbody id="manage-menu-table" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- TAB 6: SALES REPORTS & ANALYTICS           -->
-        <!-- ========================================== -->
+        <!-- TAB 6: REPORTS -->
         <section id="tab-reports" class="tab-content hidden space-y-5">
-            <!-- Stat Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                     <span class="text-xs text-slate-400 font-medium">ยอดขายรวมวันนี้</span>
@@ -348,7 +294,6 @@
                 </div>
             </div>
 
-            <!-- History Orders Table -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                 <h3 class="font-bold text-base text-slate-800 mb-4">ประวัติรายการสั่งซื้อและใบรวบรวมยอด</h3>
                 <div class="overflow-x-auto">
@@ -364,22 +309,15 @@
                                 <th class="p-3 text-center">พิมพ์ใบเสร็จ</th>
                             </tr>
                         </thead>
-                        <tbody id="report-orders-table" class="divide-y divide-slate-100">
-                            <!-- JS inserts history -->
-                        </tbody>
+                        <tbody id="report-orders-table" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- TAB 7: TELEGRAM MINI APP SIMULATOR (CUSTOMER) -->
-        <!-- ========================================== -->
+        <!-- TAB 7: CUSTOMER MINI APP SIMULATOR -->
         <section id="tab-preview-cust" class="tab-content hidden max-w-md mx-auto">
-            <!-- Simulated Mobile Device Frame -->
             <div class="bg-tg-bg rounded-3xl shadow-2xl border-4 border-slate-800 overflow-hidden text-tg-text flex flex-col min-h-[720px] relative">
-                
-                <!-- Mobile Top Bar -->
                 <div class="bg-tg-bg px-5 py-2 flex justify-between items-center text-xs text-tg-hint border-b border-slate-700/50">
                     <span>9:41</span>
                     <div class="flex items-center gap-1.5">
@@ -388,19 +326,17 @@
                     </div>
                 </div>
 
-                <!-- Telegram Mini App Top Nav -->
                 <div class="bg-tg-card px-4 py-3 flex items-center justify-between shadow-sm">
                     <div class="flex items-center space-x-3">
                         <button class="text-tg-hint hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
                         <div>
-                            <h2 class="font-semibold text-sm leading-tight">ร้านอาหารป้าต้อย (Mini App)</h2>
+                            <h2 class="font-semibold text-sm leading-tight">ร้านอาหารฟูจิแพนเค้ก (Mini App)</h2>
                             <p class="text-[11px] text-tg-hint">บอทสั่งอาหาร Telegram</p>
                         </div>
                     </div>
                     <button class="text-tg-hint hover:text-white"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                 </div>
 
-                <!-- Banner & Table Select -->
                 <div class="p-4 bg-gradient-to-r from-blue-900 to-tg-card border-b border-slate-700">
                     <div class="flex justify-between items-center">
                         <div>
@@ -421,17 +357,9 @@
                     </div>
                 </div>
 
-                <!-- Categories Scroll Bar -->
-                <div class="flex overflow-x-auto px-3 py-2 bg-tg-card gap-2 no-scrollbar border-b border-slate-700/60" id="cust-categories">
-                    <!-- JS inserts categories -->
-                </div>
+                <div class="flex overflow-x-auto px-3 py-2 bg-tg-card gap-2 no-scrollbar border-b border-slate-700/60" id="cust-categories"></div>
+                <div class="flex-1 overflow-y-auto p-3 space-y-3 max-h-[420px]" id="cust-menu-list"></div>
 
-                <!-- Customer Menu List -->
-                <div class="flex-1 overflow-y-auto p-3 space-y-3 max-h-[420px]" id="cust-menu-list">
-                    <!-- JS inserts customer menu -->
-                </div>
-
-                <!-- Telegram Bottom Fixed Button -->
                 <div class="p-3 bg-tg-card border-t border-slate-700/60">
                     <button id="cust-cart-btn" onclick="toggleCartModal(true)" class="w-full bg-tg-button hover:bg-blue-600 text-white font-medium py-2.5 px-4 rounded-xl flex justify-between items-center transition shadow-lg opacity-50 cursor-not-allowed" disabled>
                         <span class="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full font-bold" id="cart-count">0 รายการ</span>
@@ -451,23 +379,17 @@
                                 <i class="fa-solid fa-xmark text-lg"></i>
                             </button>
                         </div>
-
-                        <div id="cart-items-list" class="flex-1 overflow-y-auto space-y-2 mb-3 max-h-[35vh] pr-1">
-                            <!-- JS inserts items -->
-                        </div>
-
+                        <div id="cart-items-list" class="flex-1 overflow-y-auto space-y-2 mb-3 max-h-[35vh] pr-1"></div>
                         <div class="mb-3">
                             <label class="block text-xs text-tg-hint mb-1">หมายเหตุเพิ่มเติมถึงห้องครัว</label>
                             <input type="text" id="cart-note" placeholder="เช่น ไม่ใส่ผักชี, ช้อนพลาสติก..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-tg-blue">
                         </div>
-
                         <div class="space-y-1 border-t border-slate-700 pt-2 mb-3 text-xs">
                             <div class="flex justify-between font-bold text-sm text-white">
                                 <span>ราคารวมทั้งสิ้น</span>
                                 <span class="text-emerald-400" id="summary-total-price">฿0</span>
                             </div>
                         </div>
-
                         <button onclick="submitCustomerOrder()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-center shadow-lg transition text-xs flex justify-center items-center gap-2">
                             <i class="fa-solid fa-paper-plane"></i> ยืนยันส่งรายการอาหาร
                         </button>
@@ -479,7 +401,6 @@
                     <div class="bg-tg-card rounded-t-2xl p-4 border-t border-slate-700">
                         <h4 class="font-bold text-sm mb-1 text-white" id="opt-title">ชื่อเมนู</h4>
                         <p class="text-xs text-tg-hint mb-3" id="opt-price">฿0</p>
-
                         <div class="mb-3" id="opt-spicy-box">
                             <label class="block text-xs text-tg-hint mb-1 font-semibold">ระดับความเผ็ด</label>
                             <div class="grid grid-cols-3 gap-2 text-xs">
@@ -488,21 +409,16 @@
                                 <button onclick="selectSpicy(this, 'เผ็ดมาก')" class="opt-spicy bg-slate-800 border border-slate-700 py-1.5 rounded text-center text-white">เผ็ดมาก</button>
                             </div>
                         </div>
-
                         <div class="mb-4" id="opt-addons-box">
                             <label class="block text-xs text-tg-hint mb-1 font-semibold">ท็อปปิ้งเพิ่มเติม</label>
-                            <div class="space-y-2 text-xs" id="opt-addons-list">
-                                <!-- JS inserts addons -->
-                            </div>
+                            <div class="space-y-2 text-xs" id="opt-addons-list"></div>
                         </div>
-
                         <div class="flex gap-2">
                             <button onclick="closeOptionsModal()" class="w-1/3 bg-slate-700 py-2 rounded-xl text-xs font-semibold text-white">ยกเลิก</button>
                             <button onclick="confirmAddToCart()" class="w-2/3 bg-tg-button py-2 rounded-xl text-xs font-semibold text-white">เพิ่มลงตะกร้า</button>
                         </div>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -532,8 +448,8 @@
                     <input type="number" id="form-menu-price" min="0" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-medium text-slate-700 mb-1">รูปภาพ (Emoji)</label>
-                    <input type="text" id="form-menu-img" placeholder="เช่น 🍲 หรือ 🍧" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <label class="block font-medium text-slate-700 mb-1">รูปภาพ (Emoji หรือ URL รูปภาพ / ชื่อไฟล์)</label>
+                    <input type="text" id="form-menu-img" placeholder="เช่น 🥞 หรือ images1.jpg" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
                 <div class="flex justify-end gap-2 pt-3 border-t">
                     <button type="button" onclick="closeEditMenuModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium">ยกเลิก</button>
@@ -543,23 +459,19 @@
         </div>
     </div>
 
-    <!-- RECEIPT / BILL PRINT MODAL -->
+    <!-- RECEIPT MODAL -->
     <div id="receipt-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl font-mono text-slate-800 relative">
             <button onclick="closeReceiptModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <div class="text-center border-b border-dashed border-slate-300 pb-3">
-                <h2 class="font-bold text-lg font-sans">ร้านอาหารป้าต้อย</h2>
+                <h2 class="font-bold text-lg font-sans">ร้านฟูจิแพนเค้ก</h2>
                 <p class="text-[11px] text-slate-500">ใบเสร็จรับเงิน / Receipt</p>
                 <p class="text-[10px] text-slate-400 mt-1" id="rec-date">วันที่: 00/00/0000 00:00</p>
                 <p class="text-xs font-bold text-slate-700 mt-1" id="rec-id">Order #0000</p>
             </div>
-
-            <div class="text-xs space-y-1.5" id="rec-items">
-                <!-- Items list -->
-            </div>
-
+            <div class="text-xs space-y-1.5" id="rec-items"></div>
             <div class="border-t border-dashed border-slate-300 pt-2 text-xs space-y-1">
                 <div class="flex justify-between font-bold text-sm pt-1">
                     <span>ราคารวมทั้งสิ้น:</span>
@@ -574,7 +486,6 @@
                     <span id="rec-table">T-01</span>
                 </div>
             </div>
-
             <div class="text-center border-t border-dashed border-slate-300 pt-3 text-[10px] text-slate-400">
                 <p>ขอบคุณที่อุดหนุนโอกาสหน้าเชิญใหม่ครับ</p>
                 <button onclick="window.print()" class="mt-3 w-full bg-slate-900 text-white py-2 rounded-xl font-sans font-medium text-xs shadow">
@@ -619,8 +530,17 @@
     <!-- CORE LOGIC & STATE MANAGEMENT -->
     <script>
         // APP STATE
-        let currentRole = 'cashier'; // 'cashier', 'customer', 'kds', 'waiter'
+        let currentRole = 'cashier';
         let currentTab = 'tab-pos';
+
+        // HELPER TO RENDER MEDIA (IMAGE OR EMOJI)
+        function renderMedia(imgSrc, altName = '') {
+            if (!imgSrc) return '<span class="text-xl">🍽️</span>';
+            if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://') || imgSrc.includes('.')) {
+                return `<img src="${imgSrc}" alt="${altName}" class="w-full h-full object-cover rounded-lg">`;
+            }
+            return `<span class="text-xl">${imgSrc}</span>`;
+        }
 
         let menuItems = [
             { id: 1, name: 'ผัดกะเพราหมูกรอบ ไข่ดาว', category: 'อาหารจานเดียว', price: 65, img: '🍲', available: true, spicyOpt: true, addons: [{name: 'เพิ่มไข่ดาว', price: 10}, {name: 'เพิ่มข้าว', price: 10}] },
@@ -631,7 +551,7 @@
             { id: 6, name: 'ชานมเย็นสูตรเข้มข้น', category: 'เครื่องดื่ม', price: 35, img: '🧋', available: true, spicyOpt: false, addons: [{name: 'เพิ่มไข่มุก', price: 10}] },
             { id: 7, name: 'น้ำมะนาวโซดา', category: 'เครื่องดื่ม', price: 40, img: '🍹', available: true, spicyOpt: false, addons: [] },
             { id: 8, name: 'บิงซูสตรอว์เบอร์รี', category: 'ของหวาน', price: 129, img: '🍨', available: true, spicyOpt: false, addons: [] },
-            { id: 9, name: 'Classic Buttermilk Pancake', category: 'ของหวาน', price: 89, img: 'https://raw.githubusercontent.com/vanits898/my-restaurant-app/main/images1.jpg', available: true, spicyOpt: false, addons: [] }
+            { id: 9, name: 'Classic Buttermilk Pancake', category: 'ของหวาน', price: 89, img: 'images1.jpg', available: true, spicyOpt: false, addons: [] }
         ];
 
         let orders = [
@@ -647,7 +567,7 @@
                 ],
                 total: 185,
                 note: 'ขอพริกน้ำปลาเพิ่มครับ',
-                status: 'cooking', // 'pending', 'cooking', 'completed'
+                status: 'cooking',
                 paid: false,
                 paymentMethod: '-'
             },
@@ -669,19 +589,14 @@
             }
         ];
 
-        // Pos Cart State
         let posCart = [];
         let selectedPosCategory = 'ทั้งหมด';
-
-        // Customer Cart State
         let customerCart = [];
         let selectedCustCategory = 'ทั้งหมด';
         let currentModalItem = null;
         let selectedSpicy = 'ปกติ';
 
-        // INITIALIZATION & URL PARAMETERS PARSER
         window.onload = function() {
-            // Check URL Parameters e.g. ?mode=customer&table=T-03
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             const tableParam = urlParams.get('table');
@@ -694,10 +609,9 @@
             if (modeParam && ['cashier', 'customer', 'kds', 'waiter'].includes(modeParam)) {
                 changeRoleMode(modeParam);
             } else {
-                changeRoleMode('cashier'); // Default to Cashier Machine mode
+                changeRoleMode('cashier');
             }
 
-            // Render all components
             renderPosCategories();
             renderPosMenu();
             renderCustomerCategories();
@@ -710,7 +624,6 @@
             updateKDSBadge();
         };
 
-        // ROLE MODE SWITCHER
         function changeRoleMode(role) {
             currentRole = role;
             document.getElementById('role-selector').value = role;
@@ -720,26 +633,22 @@
             const roleBadge = document.getElementById('role-badge');
 
             if (role === 'cashier') {
-                // Cashier Machine: FULL ACCESS to ALL TABS
                 globalHeader.classList.remove('hidden');
                 cashierNavbar.classList.remove('hidden');
                 roleBadge.innerText = 'เครื่องแคชเชียร์ (ทุก Tab)';
                 roleBadge.className = 'bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-full text-[10px] uppercase';
                 switchTab('tab-pos');
             } else if (role === 'customer') {
-                // Customer Mode: Hide Navbar, Show Customer Preview Tab Only
                 cashierNavbar.classList.add('hidden');
                 roleBadge.innerText = 'โหมดลูกค้าสั่งอาหาร';
                 roleBadge.className = 'bg-blue-500 text-white font-bold px-2 py-0.5 rounded-full text-[10px] uppercase';
                 switchTab('tab-preview-cust');
             } else if (role === 'kds') {
-                // Kitchen Mode: Show KDS Only
                 cashierNavbar.classList.add('hidden');
                 roleBadge.innerText = 'โหมดจอครัว (KDS)';
                 roleBadge.className = 'bg-red-500 text-white font-bold px-2 py-0.5 rounded-full text-[10px] uppercase';
                 switchTab('tab-kds');
             } else if (role === 'waiter') {
-                // Waiter Mode: Show Tables & Order Entry
                 cashierNavbar.classList.add('hidden');
                 roleBadge.innerText = 'โหมดพนักงานเสิร์ฟ';
                 roleBadge.className = 'bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full text-[10px] uppercase';
@@ -747,32 +656,23 @@
             }
         }
 
-        // TAB SWITCHER (For Cashier Mode)
         function switchTab(tabId) {
             currentTab = tabId;
-
-            // Hide all tab content
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-
-            // Show current tab
             const target = document.getElementById(tabId);
             if (target) target.classList.remove('hidden');
 
-            // Highlight nav button
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-tab-active'));
             const activeBtn = document.getElementById(`btn-${tabId}`);
             if (activeBtn) activeBtn.classList.add('nav-tab-active');
 
-            // Re-render views on demand
             if (tabId === 'tab-tables') renderTableOverview();
             if (tabId === 'tab-kds') renderKDS();
             if (tabId === 'tab-checkout') renderCheckoutList();
             if (tabId === 'tab-reports') renderReports();
         }
 
-        /* ========================================== */
-        /* 1. CASHIER POS / TAKE ORDER                */
-        /* ========================================== */
+        /* 1. CASHIER POS */
         function renderPosCategories() {
             const categories = ['ทั้งหมด', 'อาหารจานเดียว', 'ทานเล่น', 'เครื่องดื่ม', 'ของหวาน'];
             const container = document.getElementById('pos-cat-buttons');
@@ -797,8 +697,10 @@
 
             container.innerHTML = filtered.map(item => `
                 <button onclick="addPosCart(${item.id})" class="bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl p-3 text-left transition flex flex-col justify-between h-28 relative ${!item.available ? 'opacity-40 cursor-not-allowed' : ''}" ${!item.available ? 'disabled' : ''}>
-                    <div class="flex justify-between items-start">
-                        <span class="text-2xl">${item.img}</span>
+                    <div class="flex justify-between items-start w-full gap-1">
+                        <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                            ${renderMedia(item.img, item.name)}
+                        </div>
                         <span class="font-bold text-xs text-blue-600">฿${item.price}</span>
                     </div>
                     <div>
@@ -911,9 +813,7 @@
             renderReports();
         }
 
-        /* ========================================== */
-        /* 2. TABLE MONITOR & ORDER MANAGEMENT        */
-        /* ========================================== */
+        /* 2. TABLE MONITOR & ORDER MANAGEMENT */
         function renderTableOverview() {
             const tables = ['T-01', 'T-02', 'T-03', 'T-04', 'T-05', 'Takeaway'];
             const container = document.getElementById('table-overview-grid');
@@ -941,7 +841,6 @@
                 `;
             }).join('');
 
-            // Active Orders Table
             const tbody = document.getElementById('active-orders-table-body');
             const activeList = orders.filter(o => !o.paid);
 
@@ -987,9 +886,7 @@
             renderCheckoutDetail(orderId);
         }
 
-        /* ========================================== */
-        /* 3. KITCHEN DISPLAY SYSTEM (KDS) LOGIC      */
-        /* ========================================== */
+        /* 3. KITCHEN DISPLAY SYSTEM (KDS) */
         function renderKDS() {
             const grid = document.getElementById('kds-orders-grid');
             
@@ -1098,9 +995,7 @@
             }
         }
 
-        /* ========================================== */
-        /* 4. CHECKOUT & BILLING PANEL LOGIC          */
-        /* ========================================== */
+        /* 4. CHECKOUT & BILLING */
         function renderCheckoutList() {
             const container = document.getElementById('checkout-pending-tables');
             const unpaidOrders = orders.filter(o => !o.paid);
@@ -1189,14 +1084,16 @@
             }
         }
 
-        /* ========================================== */
-        /* 5. MENU MANAGEMENT LOGIC                   */
-        /* ========================================== */
+        /* 5. MENU MANAGEMENT */
         function renderManageMenu() {
             const table = document.getElementById('manage-menu-table');
             table.innerHTML = menuItems.map(item => `
                 <tr class="hover:bg-slate-50">
-                    <td class="p-3 text-2xl">${item.img}</td>
+                    <td class="p-3">
+                        <div class="w-10 h-10 flex items-center justify-center overflow-hidden">
+                            ${renderMedia(item.img, item.name)}
+                        </div>
+                    </td>
                     <td class="p-3 font-semibold text-slate-800">${item.name}</td>
                     <td class="p-3 text-xs text-slate-500">${item.category}</td>
                     <td class="p-3 font-bold text-slate-700">฿${item.price}</td>
@@ -1286,9 +1183,7 @@
             renderCustomerMenu();
         }
 
-        /* ========================================== */
-        /* 6. REPORTS & RECEIPT MODAL LOGIC           */
-        /* ========================================== */
+        /* 6. REPORTS & RECEIPT */
         function renderReports() {
             const paidOrders = orders.filter(o => o.paid);
             const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
@@ -1361,9 +1256,7 @@
             document.getElementById('receipt-modal').classList.add('hidden');
         }
 
-        /* ========================================== */
-        /* 7. CUSTOMER MINI APP SIMULATOR LOGIC       */
-        /* ========================================== */
+        /* 7. CUSTOMER MINI APP SIMULATOR */
         function renderCustomerCategories() {
             const categories = ['ทั้งหมด', 'อาหารจานเดียว', 'ทานเล่น', 'เครื่องดื่ม', 'ของหวาน'];
             const container = document.getElementById('cust-categories');
@@ -1388,8 +1281,8 @@
 
             container.innerHTML = filtered.map(item => `
                 <div class="bg-tg-card rounded-xl p-2.5 flex gap-3 items-center border border-slate-700/50 ${!item.available ? 'opacity-50' : ''}">
-                    <div class="text-2xl bg-slate-800 p-2 rounded-xl border border-slate-700/50 flex justify-center items-center w-12 h-12">
-                        ${item.img}
+                    <div class="bg-slate-800 rounded-xl border border-slate-700/50 flex justify-center items-center w-12 h-12 overflow-hidden flex-shrink-0">
+                        ${renderMedia(item.img, item.name)}
                     </div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-semibold text-xs text-white truncate">${item.name}</h4>
