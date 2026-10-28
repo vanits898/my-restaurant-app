@@ -287,7 +287,7 @@
                 <div class="flex justify-between items-center border-b border-slate-200 pb-4">
                     <div>
                         <h3 class="font-bold text-lg text-slate-800">จัดการรายการอาหารและราคา</h3>
-                        <p class="text-xs text-slate-500">เพิ่ม แก้ไขราคา ปรับเปลี่ยนรูปภาพ หรือตั้งสถานะ "สินค้าหมด"</p>
+                        <p class="text-xs text-slate-500">เพิ่ม แก้ไขราคา ปรับเปลี่ยนรูปภาพ ลบ หรือตั้งสถานะ "สินค้าหมด"</p>
                     </div>
                     <button onclick="openAddMenuModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-xl font-semibold transition flex items-center gap-1.5 shadow">
                         <i class="fa-solid fa-plus"></i> เพิ่มเมนูใหม่
@@ -1029,9 +1029,12 @@
 
         function renderPosMenu() {
             const container = document.getElementById('pos-menu-grid');
-            const filtered = selectedPosCategory === 'ทั้งหมด' 
-                ? menuItems 
+            let filtered = selectedPosCategory === 'ทั้งหมด' 
+                ? [...menuItems] 
                 : menuItems.filter(i => i.category === selectedPosCategory);
+
+            // 🟢 จัดเรียงให้เมนูที่พร้อมขาย (available: true) ขึ้นก่อน ส่วนที่หมด (available: false) ไปอยู่ด้านล่าง
+            filtered.sort((a, b) => (b.available === true ? 1 : 0) - (a.available === true ? 1 : 0));
 
             container.innerHTML = filtered.map(item => `
                 <button onclick="addPosCart(${item.id})" class="bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl p-3 text-left transition flex flex-col justify-between h-28 relative ${!item.available ? 'opacity-40 cursor-not-allowed' : ''}" ${!item.available ? 'disabled' : ''}>
@@ -1501,7 +1504,11 @@
         /* 5. MENU MANAGEMENT */
         function renderManageMenu() {
             const table = document.getElementById('manage-menu-table');
-            table.innerHTML = menuItems.map(item => `
+            
+            // 🟢 จัดเรียงให้เมนูที่พร้อมขายขึ้นก่อน ส่วนเมนูสินค้าหมดไปไว้ด้านล่าง
+            let sortedMenu = [...menuItems].sort((a, b) => (b.available === true ? 1 : 0) - (a.available === true ? 1 : 0));
+
+            table.innerHTML = sortedMenu.map(item => `
                 <tr class="hover:bg-slate-50">
                     <td class="p-3">
                         <div class="w-10 h-10 flex items-center justify-center overflow-hidden">
@@ -1520,6 +1527,9 @@
                         <button onclick="editMenuItem(${item.id})" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">
                             <i class="fa-solid fa-pen"></i> แก้ไข
                         </button>
+                        <button onclick="deleteMenuItem(${item.id})" class="text-red-600 hover:text-red-800 text-xs font-semibold">
+                            <i class="fa-solid fa-trash"></i> ลบ
+                        </button>
                     </td>
                 </tr>
             `).join('');
@@ -1529,6 +1539,20 @@
             const item = menuItems.find(i => i.id === id);
             if (item) {
                 menuRef.child(id).update({ available: !item.available });
+            }
+        }
+
+        // 🟢 ฟังก์ชั่นลบรายการเมนูออกจากระบบ
+        function deleteMenuItem(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+
+            if (confirm(`คุณต้องการลบเมนู "${item.name}" ออกจากระบบใช่หรือไม่?`)) {
+                menuRef.child(id).remove().then(() => {
+                    alert(`✅ ลบรายการ "${item.name}" เรียบร้อยแล้ว`);
+                }).catch(err => {
+                    alert(`เกิดข้อผิดพลาดในการลบ: ${err.message}`);
+                });
             }
         }
 
@@ -1715,12 +1739,13 @@
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', `SalesReport_${new Date().toISOString().slice(0, 10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const link = document.getElementById('a');
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `SalesReport_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function openReceiptModal(orderId) {
@@ -1767,9 +1792,12 @@
 
         function renderCustomerMenu() {
             const container = document.getElementById('cust-menu-list');
-            const filtered = selectedCustCategory === 'ทั้งหมด' 
-                ? menuItems 
+            let filtered = selectedCustCategory === 'ทั้งหมด' 
+                ? [...menuItems] 
                 : menuItems.filter(i => i.category === selectedCustCategory);
+
+            // 🟢 จัดเรียงให้เมนูที่พร้อมขาย (available: true) ขึ้นก่อน ส่วนที่หมด (available: false) ไปอยู่ด้านล่าง
+            filtered.sort((a, b) => (b.available === true ? 1 : 0) - (a.available === true ? 1 : 0));
 
             container.innerHTML = filtered.map(item => `
                 <div class="bg-tg-card rounded-xl p-2.5 flex gap-3 items-center border border-slate-700/50 ${!item.available ? 'opacity-50' : ''}">
