@@ -376,6 +376,7 @@
                                 <th class="p-3">ราคารวม</th>
                                 <th class="p-3">สถานะชำระเงิน</th>
                                 <th class="p-3 text-center">พิมพ์ใบเสร็จ</th>
+                                <th class="p-3 text-center">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="report-orders-table" class="divide-y divide-slate-100"></tbody>
@@ -1033,7 +1034,6 @@
                 ? [...menuItems] 
                 : menuItems.filter(i => i.category === selectedPosCategory);
 
-            // 🟢 จัดเรียงให้เมนูที่พร้อมขาย (available: true) ขึ้นก่อน ส่วนที่หมด (available: false) ไปอยู่ด้านล่าง
             filtered.sort((a, b) => (b.available === true ? 1 : 0) - (a.available === true ? 1 : 0));
 
             container.innerHTML = filtered.map(item => `
@@ -1190,7 +1190,7 @@
             const container = document.getElementById('table-overview-grid');
 
             container.innerHTML = tables.map(t => {
-                const activeOrder = orders.find(o => o.table === t && !o.paid);
+                const activeOrder = orders.find(o => o.table === t && !o.paid && o.status !== 'cancelled');
                 const isOccupied = !!activeOrder;
 
                 return `
@@ -1213,7 +1213,7 @@
             }).join('');
 
             const tbody = document.getElementById('active-orders-table-body');
-            const activeList = orders.filter(o => !o.paid);
+            const activeList = orders.filter(o => !o.paid && o.status !== 'cancelled');
 
             if (activeList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">ไม่มีออเดอร์ที่ค้างชำระในขณะนี้</td></tr>`;
@@ -1240,9 +1240,15 @@
                     <td class="p-3">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">ยังไม่ชำระ</span>
                     </td>
-                    <td class="p-3 text-center">
-                        <button onclick="quickCheckout('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-2.5 py-1 rounded font-medium">
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="quickCheckout('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-2 py-1 rounded font-medium">
                             ชำระเงิน
+                        </button>
+                        <button onclick="cancelOrder('${o.id}')" class="bg-amber-500 hover:bg-amber-600 text-white text-[10px] px-2 py-1 rounded font-medium">
+                            ยกเลิก
+                        </button>
+                        <button onclick="deleteOrder('${o.id}')" class="bg-red-600 hover:bg-red-700 text-white text-[10px] px-2 py-1 rounded font-medium">
+                            ลบ
                         </button>
                     </td>
                 </tr>
@@ -1260,26 +1266,52 @@
             renderCheckoutDetail(orderId);
         }
 
+        // 🔴 ฟังก์ชั่นลบออเดอร์ออกจากระบบ (Delete Order)
+        function deleteOrder(orderId) {
+            if (confirm(`คุณต้องการลบออเดอร์ ${orderId} ออกจากระบบถาวรใช่หรือไม่?`)) {
+                ordersRef.child(orderId).remove().then(() => {
+                    alert(`✅ ลบออเดอร์ ${orderId} เรียบร้อยแล้ว`);
+                }).catch(err => {
+                    alert(`เกิดข้อผิดพลาดในการลบออเดอร์: ${err.message}`);
+                });
+            }
+        }
+
+        // 🟠 ฟังก์ชั่นยกเลิกออเดอร์ (Cancel Order)
+        function cancelOrder(orderId) {
+            if (confirm(`คุณต้องการยกเลิกออเดอร์ ${orderId} ใช่หรือไม่?`)) {
+                ordersRef.child(orderId).update({ status: 'cancelled' }).then(() => {
+                    alert(`⚠️ ออเดอร์ ${orderId} ถูกยกเลิกแล้ว`);
+                    
+                    const cancelMsg = `❌ <b>ออเดอร์ #${orderId} ถูกยกเลิกเรียบร้อยแล้ว</b>`;
+                    sendTelegramNotification(TELEGRAM_STAFF_GROUP_ID, cancelMsg);
+                    sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, cancelMsg);
+                });
+            }
+        }
+
         /* 3. KITCHEN DISPLAY SYSTEM (KDS) WITH TELEGRAM STATUS UPDATE */
         function renderKDS() {
             const grid = document.getElementById('kds-orders-grid');
             
-            const pending = orders.filter(o => o.status === 'pending');
-            const cooking = orders.filter(o => o.status === 'cooking');
-            const delivering = orders.filter(o => o.status === 'delivering');
-            const completed = orders.filter(o => o.status === 'completed');
+            const activeKdsOrders = orders.filter(o => o.status !== 'cancelled');
+
+            const pending = activeKdsOrders.filter(o => o.status === 'pending');
+            const cooking = activeKdsOrders.filter(o => o.status === 'cooking');
+            const delivering = activeKdsOrders.filter(o => o.status === 'delivering');
+            const completed = activeKdsOrders.filter(o => o.status === 'completed');
 
             document.getElementById('kds-pending-count').innerText = `รอปรุง: ${pending.length}`;
             document.getElementById('kds-cooking-count').innerText = `กำลังปรุง: ${cooking.length}`;
             document.getElementById('kds-delivering-count').innerText = `🛵 กำลังส่ง: ${delivering.length}`;
             document.getElementById('kds-done-count').innerText = `เสร็จแล้ว: ${completed.length}`;
 
-            if (orders.length === 0) {
+            if (activeKdsOrders.length === 0) {
                 grid.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-12 text-center text-slate-400">ยังไม่มีรายการออเดอร์ในระบบ</div>`;
                 return;
             }
 
-            grid.innerHTML = orders.map(order => {
+            grid.innerHTML = activeKdsOrders.map(order => {
                 const minutesAgo = Math.floor((Date.now() - order.timestamp) / 60000);
                 let headerColor = 'bg-amber-500 text-white';
                 let timerBadge = 'bg-amber-100 text-amber-800';
@@ -1421,7 +1453,7 @@
         /* 4. CHECKOUT & BILLING */
         function renderCheckoutList() {
             const container = document.getElementById('checkout-pending-tables');
-            const unpaidOrders = orders.filter(o => !o.paid);
+            const unpaidOrders = orders.filter(o => !o.paid && o.status !== 'cancelled');
 
             if (unpaidOrders.length === 0) {
                 container.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">ไม่มีออเดอร์ค้างชำระเงิน</p>`;
@@ -1505,7 +1537,6 @@
         function renderManageMenu() {
             const table = document.getElementById('manage-menu-table');
             
-            // 🟢 จัดเรียงให้เมนูที่พร้อมขายขึ้นก่อน ส่วนเมนูสินค้าหมดไปไว้ด้านล่าง
             let sortedMenu = [...menuItems].sort((a, b) => (b.available === true ? 1 : 0) - (a.available === true ? 1 : 0));
 
             table.innerHTML = sortedMenu.map(item => `
@@ -1542,7 +1573,6 @@
             }
         }
 
-        // 🟢 ฟังก์ชั่นลบรายการเมนูออกจากระบบ
         function deleteMenuItem(id) {
             const item = menuItems.find(i => i.id === id);
             if (!item) return;
@@ -1663,7 +1693,7 @@
 
         function renderReports() {
             const filteredOrders = getFilteredOrders();
-            const paidOrders = filteredOrders.filter(o => o.paid);
+            const paidOrders = filteredOrders.filter(o => o.paid && o.status !== 'cancelled');
             const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
 
             document.getElementById('report-total-revenue').innerText = `฿${totalRevenue.toLocaleString()}`;
@@ -1672,9 +1702,11 @@
 
             const itemCounts = {};
             filteredOrders.forEach(o => {
-                o.items.forEach(i => {
-                    itemCounts[i.name] = (itemCounts[i.name] || 0) + i.qty;
-                });
+                if (o.status !== 'cancelled') {
+                    o.items.forEach(i => {
+                        itemCounts[i.name] = (itemCounts[i.name] || 0) + i.qty;
+                    });
+                }
             });
 
             let topItem = '-';
@@ -1689,7 +1721,7 @@
 
             const tbody = document.getElementById('report-orders-table');
             if (filteredOrders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบรายการออเดอร์ในช่วงเวลาที่เลือก</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบรายการออเดอร์ในช่วงเวลาที่เลือก</td></tr>`;
                 return;
             }
 
@@ -1701,13 +1733,21 @@
                     <td class="p-3 text-slate-600 max-w-xs truncate">${o.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</td>
                     <td class="p-3 font-bold text-emerald-600">฿${o.total}</td>
                     <td class="p-3">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${o.paid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
-                            ${o.paid ? `ชำระแล้ว (${o.paymentMethod})` : 'ยังไม่ชำระ'}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            o.status === 'cancelled' ? 'bg-slate-200 text-slate-600 font-bold' :
+                            o.paid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                        }">
+                            ${o.status === 'cancelled' ? '🚫 ยกเลิกแล้ว' : o.paid ? `ชำระแล้ว (${o.paymentMethod})` : 'ยังไม่ชำระ'}
                         </span>
                     </td>
                     <td class="p-3 text-center">
                         <button onclick="openReceiptModal('${o.id}')" class="text-slate-600 hover:text-blue-600">
                             <i class="fa-solid fa-receipt"></i> ดูใบเสร็จ
+                        </button>
+                    </td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="deleteOrder('${o.id}')" class="text-red-600 hover:text-red-800 text-xs font-semibold">
+                            <i class="fa-solid fa-trash"></i> ลบ
                         </button>
                     </td>
                 </tr>
@@ -1731,7 +1771,7 @@
                 const phoneStr = `"${o.phone || '-'}"`;
                 const itemsStr = `"${o.items.map(i => `${i.name} x${i.qty}`).join(' / ')}"`;
                 const totalStr = o.total;
-                const paidStr = o.paid ? '"ชำระแล้ว"' : '"ยังไม่ชำระ"';
+                const paidStr = o.status === 'cancelled' ? '"ยกเลิกออเดอร์"' : o.paid ? '"ชำระแล้ว"' : '"ยังไม่ชำระ"';
                 const methodStr = `"${o.paymentMethod || '-'}"`;
 
                 csvContent += `${o.id},${dateTimeStr},${tableStr},${channelStr},${phoneStr},${itemsStr},${totalStr},${paidStr},${methodStr}\n`;
@@ -1739,7 +1779,6 @@
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const link = document.getElementById('a');
             const a = document.createElement('a');
             a.setAttribute('href', url);
             a.setAttribute('download', `SalesReport_${new Date().toISOString().slice(0, 10)}.csv`);
@@ -1796,7 +1835,6 @@
                 ? [...menuItems] 
                 : menuItems.filter(i => i.category === selectedCustCategory);
 
-            // 🟢 จัดเรียงให้เมนูที่พร้อมขาย (available: true) ขึ้นก่อน ส่วนที่หมด (available: false) ไปอยู่ด้านล่าง
             filtered.sort((a, b) => (b.available === true ? 1 : 0) - (a.available === true ? 1 : 0));
 
             container.innerHTML = filtered.map(item => `
