@@ -194,10 +194,10 @@
                                 <span class="text-blue-600 text-xl" id="pos-cart-total">฿0</span>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <button onclick="submitPosOrder(false)" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition text-xs flex justify-center items-center gap-1.5 shadow">
+                                <button id="btn-pos-kitchen-only" onclick="submitPosOrder(false)" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition text-xs flex justify-center items-center gap-1.5 shadow">
                                     <i class="fa-solid fa-paper-plane"></i> ส่งเข้าครัวอย่างเดียว
                                 </button>
-                                <button onclick="submitPosOrder(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition text-xs flex justify-center items-center gap-1.5 shadow">
+                                <button id="btn-pos-pay-and-kitchen" onclick="submitPosOrder(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition text-xs flex justify-center items-center gap-1.5 shadow">
                                     <i class="fa-solid fa-cash-register"></i> ส่งครัว & คิดเงินเลย
                                 </button>
                             </div>
@@ -477,8 +477,40 @@
                                 <span class="text-emerald-400" id="summary-total-price">฿0</span>
                             </div>
                         </div>
-                        <button onclick="submitCustomerOrder()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-center shadow-lg transition text-xs flex justify-center items-center gap-2">
+                        <button id="btn-cust-submit-order" onclick="handleCustomerSubmitClick()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-center shadow-lg transition text-xs flex justify-center items-center gap-2">
                             <i class="fa-solid fa-paper-plane"></i> ยืนยันส่งรายการอาหาร
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CUSTOMER PAYMENT MODAL (สำหรับเดลิเวอรี่) -->
+                <div id="cust-payment-modal" class="absolute inset-0 bg-black/80 z-50 flex flex-col justify-end hidden backdrop-blur-md">
+                    <div class="bg-tg-card rounded-t-2xl p-5 border-t border-slate-700 text-center space-y-3">
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                            <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2">
+                                <i class="fa-solid fa-qrcode"></i> ชำระเงินล่วงหน้า (Delivery)
+                            </h3>
+                            <button onclick="closeCustomerPaymentModal()" class="text-tg-hint hover:text-white">
+                                <i class="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                        </div>
+                        
+                        <p class="text-xs text-slate-300">กรุณาสแกน QR Code PromptPay เพื่อชำระเงิน</p>
+                        
+                        <div class="bg-white p-3 rounded-2xl inline-block shadow-lg my-1">
+                            <img id="cust-pay-qr-img" src="" alt="PromptPay QR" class="w-44 h-44 mx-auto">
+                            <p class="text-[10px] text-slate-700 font-bold mt-1">นาย นพดล วิวัฒนชัย (095-926-3997)</p>
+                        </div>
+
+                        <div class="bg-slate-800 p-2.5 rounded-xl text-xs space-y-1">
+                            <div class="flex justify-between text-tg-hint">
+                                <span>ยอดชำระเดลิเวอรี่สุทธิ:</span>
+                                <span class="font-bold text-emerald-400 text-sm" id="cust-pay-amount">฿0</span>
+                            </div>
+                        </div>
+
+                        <button onclick="submitCustomerOrder()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition text-xs shadow-lg flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-circle-check"></i> ✅ แจ้งชำระเงินเรียบร้อย
                         </button>
                     </div>
                 </div>
@@ -652,6 +684,53 @@
         let userLocation = null; 
         let customerTelegramChatId = null; 
 
+        // ==========================================
+        // 💳 PROMPTPAY DYNAMIC QR CODE GENERATOR
+        // ==========================================
+        const PROMPTPAY_ACCOUNT_ID = "0959263997"; // นาย นพดล วิวัฒนชัย
+
+        function generatePromptPayPayload(target, amount) {
+            let sanitized = target.replace(/[^0-9]/g, '');
+            let targetType = '01'; // 01 = Mobile
+
+            if (sanitized.length === 10 && sanitized.startsWith('0')) {
+                sanitized = '66' + sanitized.substring(1);
+                targetType = '01';
+            } else if (sanitized.length === 13) {
+                targetType = '02';
+            }
+
+            const formattedTarget = ('00' + sanitized.length).slice(-2) + sanitized;
+            const merchantAccountInfo = '0016A000000677010111' + targetType + formattedTarget;
+            
+            let payload = '000201' +
+                          '010212' +
+                          '29' + ('00' + merchantAccountInfo.length).slice(-2) + merchantAccountInfo +
+                          '5303764' +
+                          '5802TH';
+
+            if (amount && amount > 0) {
+                const amountStr = amount.toFixed(2);
+                payload += '54' + ('00' + amountStr.length).slice(-2) + amountStr;
+            }
+
+            payload += '6304';
+
+            let crc = 0xFFFF;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    if ((crc & 0x8000) !== 0) {
+                        crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+                    } else {
+                        crc = (crc << 1) & 0xFFFF;
+                    }
+                }
+            }
+            const crcHex = ('0000' + crc.toString(16).toUpperCase()).slice(-4);
+            return payload + crcHex;
+        }
+
         // ตัวแปรสำหรับฟิลเตอร์รายงาน
         let reportFilterStart = null;
         let reportFilterEnd = null;
@@ -816,10 +895,20 @@
 
         function togglePosDeliveryPhone(tableVal) {
             const box = document.getElementById('pos-phone-box');
+            const kitchenOnlyBtn = document.getElementById('btn-pos-kitchen-only');
+            
             if (tableVal === 'Delivery') {
                 box.classList.remove('hidden');
+                if (kitchenOnlyBtn) {
+                    kitchenOnlyBtn.disabled = true;
+                    kitchenOnlyBtn.classList.add('opacity-40', 'cursor-not-allowed');
+                }
             } else {
                 box.classList.add('hidden');
+                if (kitchenOnlyBtn) {
+                    kitchenOnlyBtn.disabled = false;
+                    kitchenOnlyBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                }
             }
         }
 
@@ -1608,7 +1697,6 @@
                 return;
             }
 
-            // เพิ่ม BOM สำหรับรองรับภาษาไทยใน Microsoft Excel
             let csvContent = "\uFEFF";
             csvContent += "เลขที่ออเดอร์,วันที่-เวลา,โต๊ะ/ประเภท,ช่องทางสั่งซื้อ,เบอร์โทรศัพท์,รายการอาหาร,ราคารวม (บาท),สถานะการชำระเงิน,ช่องทางชำระเงิน\n";
 
@@ -1844,6 +1932,39 @@
             if (customerCart.length === 0) toggleCartModal(false);
         }
 
+        function handleCustomerSubmitClick() {
+            if (customerCart.length === 0) return;
+
+            const table = document.getElementById('cust-table-select').value;
+            const phone = document.getElementById('cust-phone').value;
+
+            if (table === 'Delivery') {
+                if (!phone) {
+                    alert('โปรดระบุเบอร์โทรศัพท์สำหรับจัดส่งเดลิเวอรี่');
+                    return;
+                }
+                const totalPrice = customerCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                document.getElementById('cust-pay-amount').innerText = `฿${totalPrice.toLocaleString()}`;
+
+                // เจน QR Code PromptPay ตามยอดเงินอัตโนมัติ (Dynamic QR)
+                const payload = generatePromptPayPayload(PROMPTPAY_ACCOUNT_ID, totalPrice);
+                const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payload)}`;
+
+                const qrImg = document.getElementById('cust-pay-qr-img');
+                if (qrImg) {
+                    qrImg.src = qrApiUrl;
+                }
+
+                document.getElementById('cust-payment-modal').classList.remove('hidden');
+            } else {
+                submitCustomerOrder();
+            }
+        }
+
+        function closeCustomerPaymentModal() {
+            document.getElementById('cust-payment-modal').classList.add('hidden');
+        }
+
         function submitCustomerOrder() {
             if (customerCart.length === 0) return;
 
@@ -1851,11 +1972,7 @@
             const phone = document.getElementById('cust-phone').value;
             const note = document.getElementById('cart-note').value;
             const totalPrice = customerCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-
-            if (table === 'Delivery' && !phone) {
-                alert('โปรดระบุเบอร์โทรศัพท์สำหรับจัดส่งเดลิเวอรี่');
-                return;
-            }
+            const isDelivery = (table === 'Delivery');
 
             const orderId = 'ORD-' + Math.floor(100 + Math.random() * 900);
             const now = new Date();
@@ -1874,8 +1991,8 @@
                 total: totalPrice,
                 note: note,
                 status: 'pending',
-                paid: false,
-                paymentMethod: '-',
+                paid: isDelivery ? true : false,
+                paymentMethod: isDelivery ? 'QR PromptPay (จ่ายก่อน)' : '-',
                 location: userLocation,
                 customerChatId: customerTelegramChatId
             };
@@ -1884,6 +2001,7 @@
                 customerCart = [];
                 updateCustomerCartUI();
                 toggleCartModal(false);
+                closeCustomerPaymentModal();
                 document.getElementById('cart-note').value = '';
                 document.getElementById('cust-phone').value = '';
 
@@ -1896,7 +2014,7 @@
                 if (newOrder.phone !== '-') staffMessage += `📞 <b>เบอร์โทร:</b> ${newOrder.phone}\n`;
                 staffMessage += `⏰ <b>เวลาสั่ง:</b> ${newOrder.time}\n`;
                 staffMessage += `📝 <b>รายการอาหาร:</b>\n${itemsListText}\n`;
-                staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total}\n`;
+                staffMessage += `💰 <b>ยอดรวม:</b> ฿${newOrder.total} ${isDelivery ? '(ชำระเงินแล้ว ✅)' : ''}\n`;
                 if (newOrder.note) staffMessage += `💬 <b>หมายเหตุ:</b> ${newOrder.note}\n`;
 
                 const currentAppUrl = window.location.origin + window.location.pathname;
@@ -1916,6 +2034,7 @@
                 customerGroupMsg += `📍 ประเภท: ${newOrder.table}\n`;
                 if (newOrder.phone !== '-') customerGroupMsg += `📞 เบอร์ติดต่อ: ${newOrder.phone}\n`;
                 customerGroupMsg += `💰 ยอดรวม: ฿${newOrder.total}\n`;
+                if (isDelivery) customerGroupMsg += `💳 ชำระเงิน: สำเร็จ (QR PromptPay)\n`;
                 customerGroupMsg += `กำลังส่งรายการอาหารเข้าห้องครัวครับ! 🍳`;
 
                 sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, customerGroupMsg);
