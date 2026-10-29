@@ -31,12 +31,6 @@
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
-        
-        // ⚡ เปิดใช้งาน Offline Persistence
-        firebase.database().enablePersistence().catch((err) => {
-            console.log("Offline Persistence Status/Error:", err.code);
-        });
-
         const database = firebase.database();
         const ordersRef = database.ref('orders');
         const menuRef = database.ref('menu');
@@ -103,7 +97,8 @@
                 <label class="text-xs text-slate-300 ml-1 hidden sm:inline"><i class="fa-solid fa-user-gear"></i> สลับสิทธิ์อุปกรณ์:</label>
                 <select id="role-selector" onchange="requestRoleChange(this.value)" class="bg-slate-900 border border-slate-600 rounded-lg text-xs font-semibold px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-tg-blue">
                     <option value="cashier">💻 เครื่องแคชเชียร์ (เห็นทุก Tab / จัดการได้ทั้งหมด)</option>
-                    <option value="customer">📱 ลูกค้า/ไรเดอร์ (Customer Mini App & KDS)</option>
+                    <option value="customer">📱 ลูกค้า (Customer Mini App เท่านั้น)</option>
+                    <option value="rider">🛵 ไรเดอร์จัดส่ง (กดส่งงานสำเร็จ ไม่ต้องใช้รหัส)</option>
                     <option value="kds">🍳 ห้องครัว KDS Only (เห็นเฉพาะจอสั่งปรุง)</option>
                     <option value="waiter">🧑‍🍳 พนักงานเสิร์ฟ (สั่งอาหาร & ดูสถานะโต๊ะ)</option>
                 </select>
@@ -183,6 +178,7 @@
                             </div>
                         </div>
 
+                        <!-- ช่องกรอกเบอร์โทรเดลิเวอรี่สำหรับ POS -->
                         <div id="pos-phone-box" class="mb-2 hidden">
                             <label class="block text-[11px] font-semibold text-blue-600 mb-1"><i class="fa-solid fa-phone"></i> เบอร์โทรศัพท์จัดส่ง</label>
                             <input type="tel" id="pos-phone" placeholder="เช่น 0812345678" class="w-full border border-blue-300 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-blue-50/50">
@@ -252,7 +248,7 @@
                 <div class="flex items-center space-x-3">
                     <span class="bg-red-500 text-white p-2.5 rounded-xl"><i class="fa-solid fa-fire-burner text-xl"></i></span>
                     <div>
-                        <h2 class="font-bold text-lg leading-tight">Kitchen Display System (จอครัว)</h2>
+                        <h2 class="font-bold text-lg leading-tight">Kitchen Display System (จอครัว / ไรเดอร์)</h2>
                         <p class="text-xs text-slate-400">ระบบแสดงออเดอร์สำหรับห้องครัวและไรเดอร์แบบ Real-time</p>
                     </div>
                 </div>
@@ -289,10 +285,11 @@
 
         <!-- TAB 5: MENU & STORE SETTINGS MANAGEMENT -->
         <section id="tab-menu" class="tab-content hidden space-y-5">
+            <!-- 🛠️ ส่วนตั้งค่าระบบเดลิเวอรี่ & ระบบเสียงแจ้งเตือน (Admin) -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-sliders text-blue-600"></i> ตั้งค่าระบบเดลิเวอรี่ & ค่าจัดส่งเดลิเวอรี่ (Admin)
+                        <i class="fa-solid fa-sliders text-blue-600"></i> ตั้งค่าเดลิเวอรี่ & เสียงแจ้งเตือน (Admin)
                     </h3>
                     <button onclick="getStoreCurrentLocation()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition">
                         <i class="fa-solid fa-location-crosshairs text-blue-600"></i> 📍 ปักหมุดตำแหน่งปัจจุบันของร้าน
@@ -317,32 +314,34 @@
                         <input type="number" step="1" id="setting-extra-fee" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 font-bold text-amber-600">
                     </div>
 
-                    <!-- 🔔 ระบบจัดการเสียงแจ้งเตือนออเดอร์ใหม่ -->
-                    <div class="sm:col-span-2 md:col-span-4 border-t border-slate-100 pt-3 mt-1">
-                        <h4 class="font-bold text-slate-800 text-xs mb-2 flex items-center gap-1.5">
-                            <i class="fa-solid fa-volume-high text-amber-500"></i> ตั้งค่าเสียงแจ้งเตือนออเดอร์ใหม่
-                        </h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                            <div>
-                                <label class="block font-semibold text-slate-700 mb-1">อัปโหลดไฟล์เสียง (.mp3, .wav)</label>
-                                <input type="file" id="setting-audio-file" accept="audio/*" onchange="handleAudioUpload(event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            </div>
-                            <div>
-                                <label class="block font-semibold text-slate-700 mb-1">ระดับความดังเสียง (<span id="volume-val-display">80</span>%)</label>
-                                <input type="range" id="setting-audio-volume" min="0" max="1" step="0.05" value="0.8" oninput="updateVolumeDisplay(this.value)" class="w-full accent-blue-600">
-                            </div>
-                            <div class="flex items-end gap-2">
-                                <button type="button" onclick="playSound('newOrder')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg transition text-xs shadow flex items-center gap-1">
-                                    <i class="fa-solid fa-play"></i> ทดสอบเปิดเสียง
+                    <!-- 🔊 ส่วนเพิ่มใหม่: ตั้งค่าเสียงและอัปโหลดเสียงแจ้งเตือน -->
+                    <div class="sm:col-span-2 md:col-span-4 border-t border-slate-100 pt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                                <span><i class="fa-solid fa-volume-high text-blue-600 mr-1"></i> ระดับเสียงแจ้งเตือน (Volume)</span>
+                                <span id="sound-volume-display" class="text-blue-600 font-bold">100%</span>
+                            </label>
+                            <input type="range" id="setting-sound-volume" min="0" max="1" step="0.05" value="1" oninput="updateSoundVolume(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">
+                                <i class="fa-solid fa-file-audio text-purple-600 mr-1"></i> อัปโหลดไฟล์เสียงเตือนออเดอร์ (.mp3 / .wav)
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input type="file" id="setting-sound-file" accept="audio/*" onchange="handleAudioUpload(event)" class="hidden">
+                                <button type="button" onclick="document.getElementById('setting-sound-file').click()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg font-semibold text-xs flex items-center gap-1.5 shadow">
+                                    <i class="fa-solid fa-upload"></i> เลือกไฟล์เสียง
                                 </button>
-                                <button type="button" onclick="resetCustomAudio()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3 py-2 rounded-lg transition text-xs">
-                                    คืนค่าเสียงเริ่มต้น
+                                <button type="button" onclick="playSound('newOrder')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-semibold text-xs flex items-center gap-1 shadow">
+                                    <i class="fa-solid fa-play"></i> ทดสอบเสียง
                                 </button>
+                                <span id="audio-upload-status" class="text-[11px] text-slate-400">ใช้เสียงระบบเริ่มต้น</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="sm:col-span-2 md:col-span-4 flex justify-end pt-2">
+                    <div class="sm:col-span-2 md:col-span-4 flex justify-end">
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl transition text-xs shadow flex items-center gap-1.5">
                             <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าร้านค้า
                         </button>
@@ -381,6 +380,7 @@
 
         <!-- TAB 6: REPORTS -->
         <section id="tab-reports" class="tab-content hidden space-y-5">
+            <!-- DATE TIME FILTER BAR & EXPORT BUTTON -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
@@ -494,6 +494,7 @@
                         </div>
                     </div>
 
+                    <!-- ส่วนปักหมุดตำแหน่งเดลิเวอรี่สำหรับลูกค้า -->
                     <div id="cust-delivery-location-box" class="mt-3 bg-slate-800/80 p-2.5 rounded-xl border border-blue-500/30 hidden space-y-2">
                         <div>
                             <label class="block text-[10px] text-blue-300 font-semibold mb-1"><i class="fa-solid fa-phone"></i> เบอร์โทรศัพท์สำหรับจัดส่ง *</label>
@@ -564,7 +565,7 @@
                     </div>
                 </div>
 
-                <!-- CUSTOMER PAYMENT MODAL -->
+                <!-- CUSTOMER PAYMENT MODAL (สำหรับเดลิเวอรี่) -->
                 <div id="cust-payment-modal" class="absolute inset-0 bg-black/80 z-50 flex flex-col justify-end hidden backdrop-blur-md">
                     <div class="bg-tg-card rounded-t-2xl p-5 border-t border-slate-700 text-center space-y-3">
                         <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -624,7 +625,7 @@
 
     </main>
 
-    <!-- ADMIN LOGIN MODAL -->
+    <!-- ADMIN LOGIN MODAL (ระบบเข้าสู่ระบบหลังบ้าน) -->
     <div id="login-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm hidden">
         <div class="bg-white rounded-3xl max-w-xs w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100">
             <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
@@ -734,44 +735,42 @@
         </div>
     </div>
 
-    <!-- AUDIO SOUND SYNTHESIZER & CUSTOM SOUND PLAYER -->
+    <!-- AUDIO SOUND SYNTHESIZER & CUSTOM AUDIO SYSTEM -->
     <script>
-        let customAudioDataUrl = null;
-        let customAudioVolume = 0.8;
+        let soundVolume = 1.0;
+        let customAudioBase64 = null;
 
-        function updateVolumeDisplay(val) {
-            customAudioVolume = parseFloat(val);
-            document.getElementById('volume-val-display').innerText = Math.round(customAudioVolume * 100);
+        function updateSoundVolume(val) {
+            soundVolume = parseFloat(val);
+            document.getElementById('sound-volume-display').innerText = Math.round(soundVolume * 100) + '%';
         }
 
         function handleAudioUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
 
+            document.getElementById('audio-upload-status').innerText = 'กำลังโหลดไฟล์เสียง...';
             const reader = new FileReader();
-            reader.onload = function(evt) {
-                customAudioDataUrl = evt.target.result;
-                playSound('newOrder');
-                alert("✅ อัปโหลดไฟล์เสียงสำเร็จ! สามารถกดบันทึกการตั้งค่าร้านค้าได้เลยครับ");
-            }
+            reader.onload = function(event) {
+                customAudioBase64 = event.target.result;
+                document.getElementById('audio-upload-status').innerText = '✅ ไฟล์เสียงพร้อมใช้งาน';
+            };
             reader.readAsDataURL(file);
-        }
-
-        function resetCustomAudio() {
-            customAudioDataUrl = null;
-            document.getElementById('setting-audio-file').value = '';
-            alert("คืนค่าเป็นเสียงสังเคราะห์เริ่มต้นเรียบร้อยครับ");
         }
 
         const playSound = (type = 'newOrder') => {
             try {
-                if (type === 'newOrder' && customAudioDataUrl) {
-                    const audio = new Audio(customAudioDataUrl);
-                    audio.volume = customAudioVolume;
-                    audio.play().catch(e => console.log('Audio play error:', e));
+                if (soundVolume <= 0) return;
+
+                // หากมีการอัปโหลดไฟล์เสียงไว้ ให้เล่นจากไฟล์เสียง
+                if (customAudioBase64 && type === 'newOrder') {
+                    const audio = new Audio(customAudioBase64);
+                    audio.volume = soundVolume;
+                    audio.play().catch(e => console.log('Audio playback error:', e));
                     return;
                 }
 
+                // เล่นเสียงสังเคราะห์เดิมกรณีไม่มีไฟล์อัปโหลด
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 
                 if (type === 'newOrder') {
@@ -779,7 +778,7 @@
                     const gain1 = ctx.createGain();
                     osc1.type = 'square';
                     osc1.frequency.setValueAtTime(783.99, ctx.currentTime);
-                    gain1.gain.setValueAtTime(customAudioVolume, ctx.currentTime);
+                    gain1.gain.setValueAtTime(0.8 * soundVolume, ctx.currentTime);
                     gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
                     osc1.connect(gain1);
                     gain1.connect(ctx.destination);
@@ -790,7 +789,7 @@
                     const gain2 = ctx.createGain();
                     osc2.type = 'square';
                     osc2.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.22);
-                    gain2.gain.setValueAtTime(customAudioVolume, ctx.currentTime + 0.22);
+                    gain2.gain.setValueAtTime(1.0 * soundVolume, ctx.currentTime + 0.22);
                     gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.55);
                     osc2.connect(gain2);
                     gain2.connect(ctx.destination);
@@ -804,7 +803,7 @@
                         const gain = ctx.createGain();
                         osc.type = 'triangle';
                         osc.frequency.setValueAtTime(freq, ctx.currentTime + (i * 0.12));
-                        gain.gain.setValueAtTime(customAudioVolume, ctx.currentTime + (i * 0.12));
+                        gain.gain.setValueAtTime(0.8 * soundVolume, ctx.currentTime + (i * 0.12));
                         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (i * 0.12) + 0.3);
                         osc.connect(gain);
                         gain.connect(ctx.destination);
@@ -824,42 +823,24 @@
         let userLocation = null; 
         let customerTelegramChatId = null; 
 
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-
-        function updateOnlineStatus() {
-            const statusBanner = document.getElementById('offline-banner');
-            if (!navigator.onLine) {
-                if (!statusBanner) {
-                    const banner = document.createElement('div');
-                    banner.id = 'offline-banner';
-                    banner.className = 'fixed bottom-4 left-4 right-4 md:left-auto md:right-4 bg-red-600 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-50 flex items-center justify-between animate-bounce';
-                    banner.innerHTML = `
-                        <span class="font-bold flex items-center gap-2">
-                            <i class="fa-solid fa-wifi"></i> สัญญาณอินเทอร์เน็ตขาดหาย! ระบบจะบันทึกข้อมูลลงเครื่องชั่วคราว
-                        </span>
-                    `;
-                    document.body.appendChild(banner);
-                }
-            } else {
-                if (statusBanner) statusBanner.remove();
-            }
-        }
-
+        // ==========================================
+        // 📍 พิกัดร้านค้า & การตั้งค่าค่าจัดส่ง (ดึงจาก FIREBASE)
+        // ==========================================
         let storeSettings = {
             lat: 13.7563,
             lng: 100.5018,
             freeRadiusKm: 3.0,
             extraFeePerKm: 10,
-            audioUrl: null,
-            audioVolume: 0.8
+            soundVolume: 1.0,
+            customAudio: null
         };
 
         let calculatedDistanceKm = 0;
         let calculatedDeliveryFee = 0;
 
+        // คำนวณระยะทางแบบ Haversine Formula (กิโลเมตร)
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
+            const R = 6371; // รัศมีของโลก (กม.)
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -869,12 +850,18 @@
             return R * c; 
         }
 
+        // ==========================================
+        // 🔑 ตั้งค่า รหัสผ่าน LOGIN หลังบ้าน
+        // ==========================================
         const ROLE_PASSWORDS = {
             cashier: "1234",   
             kds: "1111",       
             waiter: "2222"     
         };
 
+        // ==========================================
+        // 💳 PROMPTPAY DYNAMIC QR CODE GENERATOR
+        // ==========================================
         const PROMPTPAY_ACCOUNT_ID = "0959263997"; 
 
         function generatePromptPayPayload(target, amount) {
@@ -953,13 +940,6 @@
         let selectedSpicy = 'ปกติ';
 
         window.onload = function() {
-            updateOnlineStatus();
-
-            const savedCustCart = localStorage.getItem('cust_cart_backup');
-            if (savedCustCart) {
-                try { customerCart = JSON.parse(savedCustCart); } catch(e){}
-            }
-
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             const tableParam = urlParams.get('table');
@@ -976,16 +956,13 @@
                 togglePosDeliveryPhone(tableParam);
             }
 
-            if (modeParam && ['cashier', 'customer', 'kds', 'waiter'].includes(modeParam)) {
-                if (modeParam === 'customer') {
-                    changeRoleMode('customer');
-                } else {
-                    requestRoleChange(modeParam);
-                }
+            if (modeParam && ['cashier', 'customer', 'kds', 'waiter', 'rider'].includes(modeParam)) {
+                changeRoleMode(modeParam);
             } else {
                 changeRoleMode('customer');
             }
 
+            // ดึงข้อมูลตั้งค่าร้านค้าจาก Firebase
             storeSettingsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -994,18 +971,20 @@
                     storeSettingsRef.set(storeSettings);
                 }
                 
-                document.getElementById('setting-store-lat').value = storeSettings.lat;
-                document.getElementById('setting-store-lng').value = storeSettings.lng;
-                document.getElementById('setting-free-radius').value = storeSettings.freeRadiusKm;
-                document.getElementById('setting-extra-fee').value = storeSettings.extraFeePerKm;
-
-                if (storeSettings.audioUrl) {
-                    customAudioDataUrl = storeSettings.audioUrl;
+                document.getElementById('setting-store-lat').value = storeSettings.lat || 13.7563;
+                document.getElementById('setting-store-lng').value = storeSettings.lng || 100.5018;
+                document.getElementById('setting-free-radius').value = storeSettings.freeRadiusKm || 3.0;
+                document.getElementById('setting-extra-fee').value = storeSettings.extraFeePerKm || 10;
+                
+                if (storeSettings.soundVolume !== undefined) {
+                    soundVolume = storeSettings.soundVolume;
+                    document.getElementById('setting-sound-volume').value = soundVolume;
+                    document.getElementById('sound-volume-display').innerText = Math.round(soundVolume * 100) + '%';
                 }
-                if (storeSettings.audioVolume !== undefined) {
-                    customAudioVolume = parseFloat(storeSettings.audioVolume);
-                    document.getElementById('setting-audio-volume').value = customAudioVolume;
-                    document.getElementById('volume-val-display').innerText = Math.round(customAudioVolume * 100);
+
+                if (storeSettings.customAudio) {
+                    customAudioBase64 = storeSettings.customAudio;
+                    document.getElementById('audio-upload-status').innerText = '✅ ไฟล์เสียงพร้อมใช้งาน';
                 }
             });
 
@@ -1038,7 +1017,6 @@
                 renderCustomerCategories();
                 renderCustomerMenu();
                 renderManageMenu();
-                updateCustomerCartUI();
             });
 
             document.getElementById('form-menu-img').addEventListener('input', function(e) {
@@ -1046,6 +1024,7 @@
             });
         };
 
+        // 🛠️ บันทึกการตั้งค่าร้านค้า (รวมค่าจัดส่ง และ ตั้งค่าเสียง)
         function saveStoreSettings(e) {
             e.preventDefault();
             const newSettings = {
@@ -1053,8 +1032,8 @@
                 lng: parseFloat(document.getElementById('setting-store-lng').value),
                 freeRadiusKm: parseFloat(document.getElementById('setting-free-radius').value),
                 extraFeePerKm: parseFloat(document.getElementById('setting-extra-fee').value),
-                audioUrl: customAudioDataUrl || null,
-                audioVolume: customAudioVolume
+                soundVolume: soundVolume,
+                customAudio: customAudioBase64 || null
             };
 
             storeSettingsRef.set(newSettings).then(() => {
@@ -1076,8 +1055,8 @@
         }
 
         function requestRoleChange(newRole) {
-            if (newRole === 'customer') {
-                changeRoleMode('customer');
+            if (newRole === 'customer' || newRole === 'rider') {
+                changeRoleMode(newRole);
                 return;
             }
 
@@ -1131,9 +1110,15 @@
             } else if (role === 'customer') {
                 cashierNavbar.classList.add('hidden');
                 if (roleSelectorContainer) roleSelectorContainer.style.display = 'flex';
-                roleBadge.innerText = 'โหมดลูกค้าสั่งอาหาร/ไรเดอร์';
+                roleBadge.innerText = 'โหมดลูกค้าสั่งอาหาร';
                 roleBadge.className = 'bg-blue-500 text-white font-bold px-2 py-0.5 rounded-full text-[10px] uppercase';
                 switchTab('tab-preview-cust');
+            } else if (role === 'rider') {
+                cashierNavbar.classList.add('hidden');
+                if (roleSelectorContainer) roleSelectorContainer.style.display = 'flex';
+                roleBadge.innerText = '🛵 โหมดไรเดอร์จัดส่ง (ไม่ต้องใช้รหัส)';
+                roleBadge.className = 'bg-purple-600 text-white font-bold px-2 py-0.5 rounded-full text-[10px] uppercase';
+                switchTab('tab-kds');
             } else if (role === 'kds') {
                 cashierNavbar.classList.add('hidden');
                 if (roleSelectorContainer) roleSelectorContainer.style.display = 'flex';
@@ -1150,7 +1135,7 @@
         }
 
         function sendTelegramNotification(targetChatId, messageText, replyMarkup = null) {
-            if (!TELEGRAM_BOT_TOKEN || !navigator.onLine) return;
+            if (!TELEGRAM_BOT_TOKEN) return;
 
             const payload = {
                 chat_id: targetChatId,
@@ -1170,7 +1155,7 @@
         }
 
         function sendTelegramLocation(targetChatId, latitude, longitude) {
-            if (!TELEGRAM_BOT_TOKEN || !navigator.onLine) return;
+            if (!TELEGRAM_BOT_TOKEN) return;
 
             fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendLocation`, {
                 method: 'POST',
@@ -1183,6 +1168,7 @@
             }).catch(err => console.error("Telegram Location Error:", err));
         }
 
+        // 🟢 ระบบดึงพิกัด GPS และคำนวณระยะทางจากค่าตั้งค่าใน Admin
         function getUserGPSLocation() {
             const display = document.getElementById('location-coords-display');
             const feeBadge = document.getElementById('delivery-fee-badge');
@@ -1196,6 +1182,7 @@
                             lng: position.coords.longitude
                         };
 
+                        // คำนวณระยะทางกับพิกัดร้านค้าจาก Admin
                         calculatedDistanceKm = calculateDistance(storeSettings.lat, storeSettings.lng, userLocation.lat, userLocation.lng);
                         
                         if (calculatedDistanceKm <= storeSettings.freeRadiusKm) {
@@ -1468,7 +1455,7 @@
                 const currentAppUrl = window.location.origin + window.location.pathname;
                 const riderKeyboard = {
                     inline_keyboard: [
-                        [{ text: "🛵 จัดส่งถึงลูกค้าเรียบร้อย (เปิดแอป)", url: `${currentAppUrl}?mode=kds` }]
+                        [{ text: "🛵 จัดส่งถึงลูกค้าเรียบร้อย (เปิดแอป)", url: `${currentAppUrl}?mode=rider` }]
                     ]
                 };
 
@@ -1477,9 +1464,7 @@
                 let customerGroupMsg = `🎉 <b>ทางร้านรับออเดอร์แล้ว [#${newOrder.id}]</b>\nประเภท: ${newOrder.table}\nรายการ: ${newOrder.items.length} รายการ (ยอดรวม ฿${newOrder.total})\nกำลังต่อคิวเข้าห้องครัวครับ!`;
                 sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, customerGroupMsg);
 
-                if (!navigator.onLine) {
-                    alert(`📱 บันทึกออเดอร์ ${newOrder.id} ลงเครื่องแล้ว (โหมด Offline) ระบบจะซิงค์ขึ้นเซิร์ฟเวอร์ทันทีที่เน็ตกลับมาติด!`);
-                } else if (autoPay) {
+                if (autoPay) {
                     alert(`✅ บันทึกออเดอร์ ${newOrder.id} (${table}) เรียบร้อยแล้ว!`);
                 } else {
                     alert(`✅ ส่งออเดอร์ ${newOrder.id} (${table}) เข้าห้องครัวเรียบร้อยแล้ว!`);
@@ -1696,7 +1681,6 @@
                                     </button>
                                 `}
                             ` : order.status === 'delivering' ? `
-                                <!-- ⚡ ไรเดอร์กดจบงานได้เลยโดยไม่ต้องใส่รหัสผ่าน -->
                                 <button onclick="updateOrderStatus('${order.id}', 'completed')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow animate-bounce">
                                     <i class="fa-solid fa-house-circle-check mr-1"></i> 🛵 ไรเดอร์: จัดส่งถึงลูกค้าเรียบร้อย
                                 </button>
@@ -2234,8 +2218,6 @@
         }
 
         function updateCustomerCartUI() {
-            localStorage.setItem('cust_cart_backup', JSON.stringify(customerCart));
-
             const btn = document.getElementById('cust-cart-btn');
             const countEl = document.getElementById('cart-count');
             const totalEl = document.getElementById('cart-total');
@@ -2405,19 +2387,13 @@
             ordersRef.child(orderId).set(newOrder).then(() => {
                 customerCart = [];
                 updateCustomerCartUI();
-                localStorage.removeItem('cust_cart_backup');
                 toggleCartModal(false);
                 closeCustomerPaymentModal();
                 document.getElementById('cart-note').value = '';
                 document.getElementById('cust-phone').value = '';
 
                 playSound('newOrder');
-
-                if (!navigator.onLine) {
-                    alert(`📱 ส่งออเดอร์ ${newOrder.id} ลงเครื่องเรียบร้อยแล้ว (โหมด Offline) เมื่อเน็ตกลับมาติด ระบบจะส่งเข้าห้องครัวให้อัตโนมัติครับ!`);
-                } else {
-                    alert(`✅ ส่งออเดอร์ ${newOrder.id} เรียบร้อยแล้ว!`);
-                }
+                alert(`✅ ส่งออเดอร์ ${newOrder.id} เรียบร้อยแล้ว!`);
 
                 const itemsListText = newOrder.items.map(i => `• ${i.name} (x${i.qty}) - ฿${i.price * i.qty}`).join('\n');
                 let staffMessage = `🚨 <b>ออเดอร์ใหม่เข้ามาแล้ว! [#${newOrder.id}]</b>\n`;
@@ -2434,7 +2410,7 @@
                 const currentAppUrl = window.location.origin + window.location.pathname;
                 const riderKeyboard = {
                     inline_keyboard: [
-                        [{ text: "🛵 จัดส่งถึงลูกค้าเรียบร้อย (เปิดแอป)", url: `${currentAppUrl}?mode=kds` }]
+                        [{ text: "🛵 จัดส่งถึงลูกค้าเรียบร้อย (เปิดแอป)", url: `${currentAppUrl}?mode=rider` }]
                     ]
                 };
 
