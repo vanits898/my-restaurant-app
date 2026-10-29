@@ -18,19 +18,24 @@
     <script>  
         // Initialize Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyBkc4YHY2Ct6vnM3187Xsjzaw0dVW_nPwY",
-            authDomain: "my-pancake-store.firebaseapp.com",
-            projectId: "my-pancake-store",
-            storageBucket: "my-pancake-store.firebasestorage.app",
-            messagingSenderId: "45925570694",
-            appId: "1:45925570694:web:90024719062bdff07ad907",
-            measurementId: "G-4381HLBZ13",
-            databaseURL: "https://my-pancake-store-default-rtdb.asia-southeast1.firebasedatabase.app"
+            apiKey: "AIzaSyCwipZhXxpZR0kRV3K-_Ywe6JLTqTC2fd8",
+            authDomain: "mint-87e30.firebaseapp.com",
+            projectId: "mint-87e30",
+            storageBucket: "mint-87e30.firebasestorage.app",
+            messagingSenderId: "453212445175",
+            appId: "1:453212445175:web:a2782fef771ae1e62536f2",
+            databaseURL: "https://mint-87e30-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
+
+        // ⚡ 1. เปิดใช้งาน Offline Persistence (บันทึกข้อมูลลงเครื่องเมื่อเน็ตหลุด)
+        firebase.database().enablePersistence().catch((err) => {
+            console.log("Offline Persistence Status/Error:", err.code);
+        });
+
         const database = firebase.database();
         const ordersRef = database.ref('orders');
         const menuRef = database.ref('menu');
@@ -284,7 +289,7 @@
 
         <!-- TAB 5: MENU & STORE SETTINGS MANAGEMENT -->
         <section id="tab-menu" class="tab-content hidden space-y-5">
-            <!-- 🛠️ ส่วนที่เพิ่มใหม่: ADMIN SETTINGS PANEL (ตั้งค่าระยะทางค่าจัดส่ง & พิกัดร้าน) -->
+            <!-- ADMIN SETTINGS PANEL -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
@@ -351,7 +356,6 @@
 
         <!-- TAB 6: REPORTS -->
         <section id="tab-reports" class="tab-content hidden space-y-5">
-            <!-- DATE TIME FILTER BAR & EXPORT BUTTON -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
@@ -596,7 +600,7 @@
 
     </main>
 
-    <!-- ADMIN LOGIN MODAL (ระบบเข้าสู่ระบบหลังบ้าน) -->
+    <!-- ADMIN LOGIN MODAL -->
     <div id="login-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm hidden">
         <div class="bg-white rounded-3xl max-w-xs w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100">
             <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
@@ -762,6 +766,29 @@
         let userLocation = null; 
         let customerTelegramChatId = null; 
 
+        // ⚡ 2. ระบบตรวจจับสถานะ Online / Offline แสดง Banner เตือนบนหน้าจอ
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const statusBanner = document.getElementById('offline-banner');
+            if (!navigator.onLine) {
+                if (!statusBanner) {
+                    const banner = document.createElement('div');
+                    banner.id = 'offline-banner';
+                    banner.className = 'fixed bottom-4 left-4 right-4 md:left-auto md:right-4 bg-red-600 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-50 flex items-center justify-between animate-bounce';
+                    banner.innerHTML = `
+                        <span class="font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-wifi"></i> สัญญาณอินเทอร์เน็ตขาดหาย! ระบบจะบันทึกข้อมูลลงเครื่องชั่วคราว
+                        </span>
+                    `;
+                    document.body.appendChild(banner);
+                }
+            } else {
+                if (statusBanner) statusBanner.remove();
+            }
+        }
+
         // ==========================================
         // 📍 พิกัดร้านค้า & การตั้งค่าค่าจัดส่ง (ดึงจาก FIREBASE)
         // ==========================================
@@ -775,9 +802,8 @@
         let calculatedDistanceKm = 0;
         let calculatedDeliveryFee = 0;
 
-        // คำนวณระยะทางแบบ Haversine Formula (กิโลเมตร)
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // รัศมีของโลก (กม.)
+            const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -877,6 +903,14 @@
         let selectedSpicy = 'ปกติ';
 
         window.onload = function() {
+            updateOnlineStatus();
+
+            // ⚡ 3. ดึงรายการตะกร้าสินค้าสำรองที่เซฟไว้ใน localStorage หากมี
+            const savedCustCart = localStorage.getItem('cust_cart_backup');
+            if (savedCustCart) {
+                try { customerCart = JSON.parse(savedCustCart); } catch(e){}
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             const tableParam = urlParams.get('table');
@@ -903,7 +937,6 @@
                 changeRoleMode('customer');
             }
 
-            // ดึงข้อมูลตั้งค่าร้านค้าจาก Firebase
             storeSettingsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -947,6 +980,7 @@
                 renderCustomerCategories();
                 renderCustomerMenu();
                 renderManageMenu();
+                updateCustomerCartUI();
             });
 
             document.getElementById('form-menu-img').addEventListener('input', function(e) {
@@ -954,7 +988,6 @@
             });
         };
 
-        // 🛠️ บันทึกการตั้งค่าร้านค้า
         function saveStoreSettings(e) {
             e.preventDefault();
             const newSettings = {
@@ -1057,7 +1090,7 @@
         }
 
         function sendTelegramNotification(targetChatId, messageText, replyMarkup = null) {
-            if (!TELEGRAM_BOT_TOKEN) return;
+            if (!TELEGRAM_BOT_TOKEN || !navigator.onLine) return;
 
             const payload = {
                 chat_id: targetChatId,
@@ -1077,7 +1110,7 @@
         }
 
         function sendTelegramLocation(targetChatId, latitude, longitude) {
-            if (!TELEGRAM_BOT_TOKEN) return;
+            if (!TELEGRAM_BOT_TOKEN || !navigator.onLine) return;
 
             fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendLocation`, {
                 method: 'POST',
@@ -1090,7 +1123,6 @@
             }).catch(err => console.error("Telegram Location Error:", err));
         }
 
-        // 🟢 ระบบดึงพิกัด GPS และคำนวณระยะทางจากค่าตั้งค่าใน Admin
         function getUserGPSLocation() {
             const display = document.getElementById('location-coords-display');
             const feeBadge = document.getElementById('delivery-fee-badge');
@@ -1104,7 +1136,6 @@
                             lng: position.coords.longitude
                         };
 
-                        // คำนวณระยะทางกับพิกัดร้านค้าจาก Admin
                         calculatedDistanceKm = calculateDistance(storeSettings.lat, storeSettings.lng, userLocation.lat, userLocation.lng);
                         
                         if (calculatedDistanceKm <= storeSettings.freeRadiusKm) {
@@ -1386,7 +1417,9 @@
                 let customerGroupMsg = `🎉 <b>ทางร้านรับออเดอร์แล้ว [#${newOrder.id}]</b>\nประเภท: ${newOrder.table}\nรายการ: ${newOrder.items.length} รายการ (ยอดรวม ฿${newOrder.total})\nกำลังต่อคิวเข้าห้องครัวครับ!`;
                 sendTelegramNotification(TELEGRAM_CUSTOMER_STATUS_GROUP_ID, customerGroupMsg);
 
-                if (autoPay) {
+                if (!navigator.onLine) {
+                    alert(`📱 บันทึกออเดอร์ ${newOrder.id} ลงเครื่องแล้ว (โหมด Offline) ระบบจะซิงค์ขึ้นเซิร์ฟเวอร์ทันทีที่เน็ตกลับมาติด!`);
+                } else if (autoPay) {
                     alert(`✅ บันทึกออเดอร์ ${newOrder.id} (${table}) เรียบร้อยแล้ว!`);
                 } else {
                     alert(`✅ ส่งออเดอร์ ${newOrder.id} (${table}) เข้าห้องครัวเรียบร้อยแล้ว!`);
@@ -2140,6 +2173,9 @@
         }
 
         function updateCustomerCartUI() {
+            // ⚡ เซฟตะกร้าสินค้าลงเครื่องป้องกันเน็ตหลุด/หน้าเว็บรีเฟรช
+            localStorage.setItem('cust_cart_backup', JSON.stringify(customerCart));
+
             const btn = document.getElementById('cust-cart-btn');
             const countEl = document.getElementById('cart-count');
             const totalEl = document.getElementById('cart-total');
@@ -2309,13 +2345,19 @@
             ordersRef.child(orderId).set(newOrder).then(() => {
                 customerCart = [];
                 updateCustomerCartUI();
+                localStorage.removeItem('cust_cart_backup');
                 toggleCartModal(false);
                 closeCustomerPaymentModal();
                 document.getElementById('cart-note').value = '';
                 document.getElementById('cust-phone').value = '';
 
                 playSound('newOrder');
-                alert(`✅ ส่งออเดอร์ ${newOrder.id} เรียบร้อยแล้ว!`);
+
+                if (!navigator.onLine) {
+                    alert(`📱 ส่งออเดอร์ ${newOrder.id} ลงเครื่องเรียบร้อยแล้ว (โหมด Offline) เมื่อเน็ตกลับมาติด ระบบจะส่งเข้าห้องครัวให้อัตโนมัติครับ!`);
+                } else {
+                    alert(`✅ ส่งออเดอร์ ${newOrder.id} เรียบร้อยแล้ว!`);
+                }
 
                 const itemsListText = newOrder.items.map(i => `• ${i.name} (x${i.qty}) - ฿${i.price * i.qty}`).join('\n');
                 let staffMessage = `🚨 <b>ออเดอร์ใหม่เข้ามาแล้ว! [#${newOrder.id}]</b>\n`;
